@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -130,10 +129,10 @@ export default function ProjectsPage() {
               Join Discord
               <ArrowUpRight aria-hidden="true" />
             </a>
-            <Link className="text-link" href="/events">
+            <a className="text-link" href="/events">
               Find the next event
               <ArrowRight aria-hidden="true" />
-            </Link>
+            </a>
           </div>
         </div>
       </section>

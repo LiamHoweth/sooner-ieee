@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -53,10 +52,10 @@ export default async function Home() {
                 Join the Discord
                 <ArrowUpRight aria-hidden="true" />
               </a>
-              <Link className="text-link text-link-light" href="/events">
+              <a className="text-link text-link-light" href="/events">
                 View all events
                 <ArrowRight aria-hidden="true" />
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -177,10 +176,10 @@ export default async function Home() {
           </div>
         </div>
         <div className="site-container program-link-row">
-          <Link className="text-link" href="/projects">
+          <a className="text-link" href="/projects">
             Explore programs and projects
             <ArrowRight aria-hidden="true" />
-          </Link>
+          </a>
         </div>
       </section>
 

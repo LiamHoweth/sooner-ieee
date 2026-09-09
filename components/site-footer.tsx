@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 
 import { chapter, socialLinks } from '@/lib/chapter-content';
@@ -26,9 +25,9 @@ export function SiteFooter() {
           <h2>Explore</h2>
           <nav aria-label="Footer navigation">
             {footerNav.map((item) => (
-              <Link key={item.href} href={item.href}>
+              <a key={item.href} href={item.href}>
                 {item.label}
-              </Link>
+              </a>
             ))}
           </nav>
         </div>

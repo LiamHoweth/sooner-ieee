@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { ExternalLink, Menu } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -46,7 +45,7 @@ export function SiteHeader() {
 
       <div className="brand-bar">
         <div className="site-container brand-inner">
-          <Link className="text-lockup" href="/" aria-label="IEEE Sooners home">
+          <a className="text-lockup" href="/" aria-label="IEEE Sooners home">
             <span className="text-lockup-mark" aria-hidden="true">
               <span>OU</span>
             </span>
@@ -54,13 +53,13 @@ export function SiteHeader() {
               <strong>IEEE SOONERS</strong>
               <small>Student Branch at the University of Oklahoma</small>
             </span>
-          </Link>
+          </a>
 
           <nav className="desktop-nav" aria-label="Primary navigation">
             {navigation.map((item) => (
-              <Link key={item.href} href={item.href}>
+              <a key={item.href} href={item.href}>
                 {item.label}
-              </Link>
+              </a>
             ))}
             <a className="nav-join" href={discord.href} target="_blank" rel="noreferrer">
               Join Discord
@@ -90,9 +89,9 @@ export function SiteHeader() {
               </SheetHeader>
               <nav aria-label="Mobile navigation">
                 {navigation.map((item) => (
-                  <Link key={item.href} href={item.href}>
+                  <a key={item.href} href={item.href}>
                     {item.label}
-                  </Link>
+                  </a>
                 ))}
                 <a href={discord.href} target="_blank" rel="noreferrer">
                   Join the Discord
