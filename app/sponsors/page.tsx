@@ -11,6 +11,8 @@ import {
 import { PageIntro } from '@/components/page-intro';
 import { chapter, sponsors } from '@/lib/chapter-content';
 
+export const dynamic = 'force-static';
+
 export const metadata: Metadata = {
   title: 'Sponsors',
   description:

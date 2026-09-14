@@ -16,6 +16,8 @@ import {
   socialLinks,
 } from '@/lib/chapter-content';
 
+export const dynamic = 'force-static';
+
 export const metadata: Metadata = {
   title: 'About',
   description:

@@ -6,6 +6,8 @@ import { PageIntro } from '@/components/page-intro';
 import { getChapterEventFeed } from '@/lib/calendar';
 import { chapter, socialLinks } from '@/lib/chapter-content';
 
+export const dynamic = 'force-static';
+
 export const metadata: Metadata = {
   title: 'Events',
   description:

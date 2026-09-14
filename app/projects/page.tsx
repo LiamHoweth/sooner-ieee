@@ -12,6 +12,8 @@ import {
 import { PageIntro } from '@/components/page-intro';
 import { achievements, programs, socialLinks } from '@/lib/chapter-content';
 
+export const dynamic = 'force-static';
+
 export const metadata: Metadata = {
   title: 'Projects & Programs',
   description:
