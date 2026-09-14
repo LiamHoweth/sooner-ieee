@@ -54,6 +54,9 @@ jobs:
           }
           NODE
 
+      - name: Preserve framework asset directories
+        run: touch dist/client/.nojekyll
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
