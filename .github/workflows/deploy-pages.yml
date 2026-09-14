@@ -55,7 +55,12 @@ jobs:
           NODE
 
       - name: Preserve framework asset directories
-        run: touch dist/client/.nojekyll
+        run: |
+          # Vinext mirrors assetPrefix in the output tree. GitHub Pages already
+          # provides the /sooner-ieee URL prefix, so keep _next at artifact root.
+          mv dist/client/sooner-ieee/_next dist/client/_next
+          rmdir dist/client/sooner-ieee
+          touch dist/client/.nojekyll
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
