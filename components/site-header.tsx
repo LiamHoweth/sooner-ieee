@@ -13,6 +13,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { socialLinks } from '@/lib/chapter-content';
+import { sitePath } from '@/lib/site-path';
 
 const navigation = [
   { href: '/', label: 'Home' },
@@ -46,7 +47,7 @@ export function SiteHeader() {
 
       <div className="brand-bar">
         <div className="site-container brand-inner">
-          <a className="text-lockup" href="/" aria-label="IEEE Sooners home">
+          <a className="text-lockup" href={sitePath('/')} aria-label="IEEE Sooners home">
             <ChapterLogo className="text-lockup-mark" />
             <span className="text-lockup-copy">
               <strong>IEEE SOONERS</strong>
@@ -56,7 +57,7 @@ export function SiteHeader() {
 
           <nav className="desktop-nav" aria-label="Primary navigation">
             {navigation.map((item) => (
-              <a key={item.href} href={item.href}>
+              <a key={item.href} href={sitePath(item.href)}>
                 {item.label}
               </a>
             ))}
@@ -88,7 +89,7 @@ export function SiteHeader() {
               </SheetHeader>
               <nav aria-label="Mobile navigation">
                 {navigation.map((item) => (
-                  <a key={item.href} href={item.href}>
+                  <a key={item.href} href={sitePath(item.href)}>
                     {item.label}
                   </a>
                 ))}

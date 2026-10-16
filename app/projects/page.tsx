@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import { PageIntro } from '@/components/page-intro';
+import { sitePath } from '@/lib/site-path';
 import { achievements, programs, socialLinks } from '@/lib/chapter-content';
 
 export const dynamic = 'force-static';
@@ -131,7 +132,7 @@ export default function ProjectsPage() {
               Join Discord
               <ArrowUpRight aria-hidden="true" />
             </a>
-            <a className="text-link" href="/events">
+            <a className="text-link" href={sitePath('/events')}>
               Find the next event
               <ArrowRight aria-hidden="true" />
             </a>

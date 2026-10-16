@@ -8,6 +8,7 @@ import {
 
 import { EventList } from '@/components/event-list';
 import { getChapterEventFeed } from '@/lib/calendar';
+import { sitePath } from '@/lib/site-path';
 import {
   achievements,
   chapter,
@@ -52,7 +53,7 @@ export default async function Home() {
                 Join the Discord
                 <ArrowUpRight aria-hidden="true" />
               </a>
-              <a className="text-link text-link-light" href="/events">
+              <a className="text-link text-link-light" href={sitePath('/events')}>
                 View all events
                 <ArrowRight aria-hidden="true" />
               </a>
@@ -176,7 +177,7 @@ export default async function Home() {
           </div>
         </div>
         <div className="site-container program-link-row">
-          <a className="text-link" href="/projects">
+          <a className="text-link" href={sitePath('/projects')}>
             Explore programs and projects
             <ArrowRight aria-hidden="true" />
           </a>

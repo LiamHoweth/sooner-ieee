@@ -2,6 +2,7 @@ import { ArrowUpRight } from 'lucide-react';
 
 import { ChapterLogo } from '@/components/chapter-logo';
 import { chapter, socialLinks } from '@/lib/chapter-content';
+import { sitePath } from '@/lib/site-path';
 
 const footerNav = [
   { href: '/events', label: 'Events' },
@@ -27,7 +28,7 @@ export function SiteFooter() {
           <h2>Explore</h2>
           <nav aria-label="Footer navigation">
             {footerNav.map((item) => (
-              <a key={item.href} href={item.href}>
+              <a key={item.href} href={sitePath(item.href)}>
                 {item.label}
               </a>
             ))}
