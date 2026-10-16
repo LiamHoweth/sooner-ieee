@@ -2,6 +2,7 @@
 
 import { ExternalLink, Menu } from 'lucide-react';
 
+import { ChapterLogo } from '@/components/chapter-logo';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -46,9 +47,7 @@ export function SiteHeader() {
       <div className="brand-bar">
         <div className="site-container brand-inner">
           <a className="text-lockup" href="/" aria-label="IEEE Sooners home">
-            <span className="text-lockup-mark" aria-hidden="true">
-              <span>OU</span>
-            </span>
+            <ChapterLogo className="text-lockup-mark" />
             <span className="text-lockup-copy">
               <strong>IEEE SOONERS</strong>
               <small>Student Branch at the University of Oklahoma</small>

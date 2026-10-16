@@ -201,16 +201,12 @@ svg {
 }
 
 .text-lockup-mark {
-  display: grid;
-  width: 3.6rem;
-  height: 3.6rem;
-  place-items: center;
-  border: 2px solid currentColor;
-  font-family: var(--font-barlow-condensed), sans-serif;
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1;
+  display: block;
+  flex-shrink: 0;
+  width: 4rem;
+  height: 4rem;
+  overflow: hidden;
+  border-radius: 50%;
 }
 
 .text-lockup-copy {
@@ -1365,6 +1361,65 @@ svg {
   color: var(--charcoal);
 }
 
+.chapter-brand-section {
+  border-top: 1px solid var(--line);
+  background: var(--fog);
+}
+
+.chapter-logo-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.chapter-logo-gallery figure {
+  min-width: 0;
+  margin: 0;
+  background: var(--white);
+}
+
+.chapter-logo-stage {
+  display: flex;
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  overflow: hidden;
+}
+
+.chapter-logo-emblem {
+  display: block;
+  width: min(100%, 16rem);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.chapter-logo-alternates {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1065 / 690;
+  overflow: hidden;
+}
+
+.chapter-logo-gallery figcaption {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 1.5rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-barlow-condensed), sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chapter-logo-gallery figcaption span {
+  color: var(--ieee-blue);
+  font-size: 0.85rem;
+}
+
 .identity-band {
   background: var(--ou-crimson);
   color: var(--white);
@@ -1719,6 +1774,15 @@ svg {
   color: #bcdceb;
 }
 
+.footer-logo {
+  display: block;
+  width: 4.5rem;
+  height: 4.5rem;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
 .footer-statement {
   max-width: 31rem;
   margin: 1.25rem 0 0;
@@ -2004,9 +2068,8 @@ svg {
   }
 
   .text-lockup-mark {
-    width: 2.9rem;
-    height: 2.9rem;
-    font-size: 1.25rem;
+    width: 3.25rem;
+    height: 3.25rem;
   }
 
   .text-lockup-copy strong {
@@ -2136,6 +2199,10 @@ svg {
   .contact-ledger article {
     grid-template-columns: 1fr;
     gap: 0.35rem;
+  }
+
+  .chapter-logo-gallery {
+    grid-template-columns: 1fr;
   }
 
   .social-link-list > a {

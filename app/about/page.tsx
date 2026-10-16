@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 
 import { PageIntro } from '@/components/page-intro';
+import { ChapterLogo } from '@/components/chapter-logo';
 import {
   achievements,
   chapter,
@@ -52,6 +53,52 @@ export default function AboutPage() {
               technical fields. OU events are open without requiring paid IEEE
               membership.
             </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="chapter-brand-section content-section" aria-labelledby="chapter-brand-title">
+        <div className="site-container">
+          <div className="content-section-heading">
+            <div>
+              <p className="eyebrow eyebrow-crimson">IEEE SOONERS</p>
+              <h2 id="chapter-brand-title">Our official logos.</h2>
+            </div>
+            <p>
+              Our student branch identity in IEEE blue, Oklahoma crimson, and
+              alternate colors.
+            </p>
+          </div>
+          <div className="chapter-logo-gallery">
+            <figure>
+              <div className="chapter-logo-stage">
+                <ChapterLogo
+                  className="chapter-logo-emblem"
+                  label="Primary IEEE Sooners logo in blue and white, with a tornado at its center"
+                />
+              </div>
+              <figcaption><span>01</span>Primary</figcaption>
+            </figure>
+            <figure>
+              <div className="chapter-logo-stage">
+                <ChapterLogo
+                  variant="secondary"
+                  className="chapter-logo-emblem"
+                  label="Secondary IEEE Sooners logo in crimson and white"
+                />
+              </div>
+              <figcaption><span>02</span>Secondary</figcaption>
+            </figure>
+            <figure>
+              <div className="chapter-logo-stage">
+                <ChapterLogo
+                  variant="alternates"
+                  className="chapter-logo-alternates"
+                  label="Six alternate IEEE Sooners logos in crimson, blue, red, black, white, and outlined red"
+                />
+              </div>
+              <figcaption><span>03</span>Alternates</figcaption>
+            </figure>
           </div>
         </div>
       </section>

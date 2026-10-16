@@ -1,5 +1,6 @@
 import { ArrowUpRight } from 'lucide-react';
 
+import { ChapterLogo } from '@/components/chapter-logo';
 import { chapter, socialLinks } from '@/lib/chapter-content';
 
 const footerNav = [
@@ -15,6 +16,7 @@ export function SiteFooter() {
       <div className="footer-rule" />
       <div className="site-container footer-grid">
         <div className="footer-identity">
+          <ChapterLogo className="footer-logo" label="IEEE Sooners primary logo" />
           <p className="eyebrow">IEEE STUDENT BRANCH · OU</p>
           <p className="footer-statement">
             A place for Sooners to build, compete, and grow together.
