@@ -1,15 +1,9 @@
 import type { Metadata } from 'next';
-import {
-  ArrowUpRight,
-  BriefcaseBusiness,
-  Handshake,
-  Mail,
-  Route,
-  Wrench,
-} from 'lucide-react';
+import { ArrowUpRight, Mail } from 'lucide-react';
 
-import { PageIntro } from '@/components/page-intro';
-import { chapter, sponsors } from '@/lib/chapter-content';
+import { PageHero } from '@/components/page-hero';
+import { achievements, chapter, sponsors } from '@/lib/chapter-content';
+import { photos } from '@/lib/photos';
 
 export const dynamic = 'force-static';
 
@@ -21,22 +15,19 @@ export const metadata: Metadata = {
 
 const partnershipPaths = [
   {
-    icon: BriefcaseBusiness,
-    number: '01',
+    word: 'Speak',
     title: 'Share technical perspective',
     description:
       'Bring engineers and technical leaders into a focused campus conversation about real work and career paths.',
   },
   {
-    icon: Wrench,
-    number: '02',
+    word: 'Build',
     title: 'Support hands-on work',
     description:
       'Help students access project materials, technical workshops, and the resources required to compete well.',
   },
   {
-    icon: Route,
-    number: '03',
+    word: 'Travel',
     title: 'Extend student opportunity',
     description:
       'Strengthen the chapter’s ability to travel, meet the wider IEEE community, and represent OU beyond Norman.',
@@ -46,88 +37,118 @@ const partnershipPaths = [
 export default function SponsorsPage() {
   return (
     <main id="main-content">
-      <PageIntro
-        index="04"
-        eyebrow="PARTNER WITH IEEE SOONERS"
-        title="Support the students already leaning in."
-        summary="Connect with motivated OU engineering students through thoughtful technical programming, hands-on work, and opportunities with a clear purpose."
-      />
+      <PageHero
+        title="Sponsors"
+        lead="Support the students already leaning in."
+        summary="Reach motivated OU engineering students through technical programming, hands-on work, and opportunities with a clear purpose."
+        photo={photos.campusAerial}
+      >
+        <a className="button button-light" href={chapter.sponsorshipPacket} target="_blank" rel="noreferrer">
+          Sponsorship packet
+          <ArrowUpRight aria-hidden="true" />
+        </a>
+      </PageHero>
 
-      <section className="partner-intro">
-        <div className="site-container partner-intro-grid">
-          <Handshake aria-hidden="true" />
-          <blockquote>
-            The best partnership starts with something useful for students.
-          </blockquote>
-          <p>
-            IEEE Sooners is looking to work with companies, recruiters,
-            engineering professionals, researchers, and technical organizations
-            during the academic year.
-          </p>
+      <section className="content-section" aria-labelledby="why-title">
+        <div className="site-container why-grid">
+          <div data-reveal>
+            <h2 className="display-title" id="why-title">
+              Why OU IEEE
+            </h2>
+            <p className="lead-copy">
+              The best partnership starts with something useful for students.
+            </p>
+            <p>
+              IEEE Sooners works with companies, recruiters, engineering
+              professionals, researchers, and technical organizations throughout
+              the academic year.
+            </p>
+          </div>
+          <dl className="proof-list" data-reveal>
+            <div>
+              <dt>Region 5 honor</dt>
+              <dd>{achievements[0].title}, 2026</dd>
+            </div>
+            <div>
+              <dt>Branch size</dt>
+              <dd>More than 50 members</dd>
+            </div>
+            <div>
+              <dt>Home</dt>
+              <dd>Gallogly College of Engineering, Norman</dd>
+            </div>
+          </dl>
         </div>
       </section>
 
-      <section className="partnership-paths content-section">
+      <section className="tile-section" aria-labelledby="paths-title">
         <div className="site-container">
-          <div className="content-section-heading">
-            <p className="eyebrow eyebrow-crimson">WAYS TO PARTNER</p>
-            <h2>Start with a concrete contribution.</h2>
-          </div>
-          <div className="partnership-list">
-            {partnershipPaths.map((path) => {
-              const Icon = path.icon;
-              return (
-                <article key={path.number}>
-                  <span>{path.number}</span>
-                  <Icon aria-hidden="true" />
-                  <h3>{path.title}</h3>
-                  <p>{path.description}</p>
-                </article>
-              );
-            })}
+          <h2 className="tile-section-title" id="paths-title" data-reveal>
+            Ways to partner
+          </h2>
+          <div className="tile-grid" data-reveal>
+            {partnershipPaths.map((path) => (
+              <article className="tile tile-padded" key={path.word}>
+                <h3 className="tile-word">{path.word}</h3>
+                <p className="tile-lead">{path.title}</p>
+                <p className="tile-body">{path.description}</p>
+              </article>
+            ))}
+            <figure className="tile tile-photo">
+              <img
+                src={photos.weatherCenter.image.src}
+                width={photos.weatherCenter.image.width}
+                height={photos.weatherCenter.image.height}
+                alt={photos.weatherCenter.alt}
+                loading="lazy"
+              />
+            </figure>
           </div>
         </div>
       </section>
 
       {sponsors.length > 0 && (
-        <section className="current-sponsors content-section">
+        <section className="content-section" aria-labelledby="partners-title">
           <div className="site-container">
-            <div className="content-section-heading">
-              <p className="eyebrow eyebrow-crimson">CURRENT PARTNERS</p>
-              <h2>Organizations backing OU students.</h2>
+            <div className="section-head" data-reveal>
+              <h2 className="display-title" id="partners-title">
+                Current partners
+              </h2>
+              <p>Organizations backing OU students this year.</p>
             </div>
-            <div className="sponsor-list">
+            <ul className="sponsor-grid" data-reveal>
               {sponsors.map((sponsor) => (
-                <a key={sponsor.name} href={sponsor.href} target="_blank" rel="noreferrer">
-                  {sponsor.name}
-                </a>
+                <li key={sponsor.name}>
+                  <a href={sponsor.href} target="_blank" rel="noreferrer">
+                    {sponsor.logo ? <img src={sponsor.logo} alt={sponsor.name} loading="lazy" /> : sponsor.name}
+                  </a>
+                  {sponsor.tier && <span>{sponsor.tier}</span>}
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </section>
       )}
 
-      <section className="sponsor-contact section-pad">
-        <div className="site-container sponsor-contact-grid">
+      <section className="cta-band" aria-labelledby="contact-title">
+        <div className="site-container cta-band-inner cta-band-split" data-reveal>
           <div>
-            <p className="eyebrow">CURRENT SPONSORSHIP INFORMATION</p>
-            <h2>See the full partnership packet.</h2>
+            <h2 className="display-title" id="contact-title">
+              Start the conversation
+            </h2>
             <p>
-              Review the chapter’s published sponsorship information, then email
-              the student leadership team to discuss an event or contribution.
+              Review the published sponsorship packet, then email the student
+              leadership team about an event or contribution.
             </p>
           </div>
-          <div className="sponsor-actions">
+          <div className="cta-band-actions cta-band-stack">
             <a className="button button-light" href={chapter.sponsorshipPacket} target="_blank" rel="noreferrer">
-              Open sponsorship packet
+              Open the sponsorship packet
               <ArrowUpRight aria-hidden="true" />
             </a>
-            <a className="sponsor-email" href={`mailto:${chapter.email}`}>
+            <a className="button button-outline-light" href={`mailto:${chapter.email}`}>
               <Mail aria-hidden="true" />
-              <span>
-                Contact the chapter
-                <strong>{chapter.email}</strong>
-              </span>
+              {chapter.email}
             </a>
             <a className="text-link text-link-light" href={chapter.donationGuide} target="_blank" rel="noreferrer">
               OU giving instructions

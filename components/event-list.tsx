@@ -4,17 +4,6 @@ import type { ChapterEvent } from '@/lib/calendar';
 
 const TIME_ZONE = 'America/Chicago';
 
-function formatDate(event: ChapterEvent) {
-  const date = new Date(event.start);
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: TIME_ZONE,
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(date);
-}
-
 function formatTime(event: ChapterEvent) {
   if (event.allDay) return 'All day';
   return new Intl.DateTimeFormat('en-US', {
@@ -28,37 +17,45 @@ function formatTime(event: ChapterEvent) {
 function dateParts(event: ChapterEvent) {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: TIME_ZONE,
+    weekday: 'short',
     month: 'short',
-    day: '2-digit',
+    day: 'numeric',
+    year: 'numeric',
   }).formatToParts(new Date(event.start));
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value || '';
 
-  return {
-    month: parts.find((part) => part.type === 'month')?.value || '',
-    day: parts.find((part) => part.type === 'day')?.value || '',
-  };
+  return { weekday: part('weekday'), month: part('month'), day: part('day'), year: part('year') };
 }
 
 export function EventList({
   events,
   compact = false,
+  archive = false,
 }: {
   events: ChapterEvent[];
   compact?: boolean;
+  /** Past events: a dense grid that shows the year instead of the weekday. */
+  archive?: boolean;
 }) {
+  const className = ['event-list', compact && 'event-list-compact', archive && 'event-archive']
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={compact ? 'event-list event-list-compact' : 'event-list'}>
+    <ol className={className}>
       {events.map((event) => {
         const date = dateParts(event);
         return (
-          <article className="event-row" key={event.id}>
+          <li className="event-row" key={event.id} data-reveal>
             <time className="event-date" dateTime={event.start}>
-              <span>{date.month}</span>
-              <strong>{date.day}</strong>
+              <span className="event-date-month">{date.month}</span>
+              <span className="event-date-day">{date.day}</span>
+              <span className="event-date-weekday">{archive ? date.year : date.weekday}</span>
             </time>
             <div className="event-copy">
-              <p className="event-full-date">{formatDate(event)}</p>
               <h3>{event.title}</h3>
-              <div className="event-meta">
+              <p className="event-meta">
                 <span>
                   <Clock3 aria-hidden="true" />
                   {formatTime(event)}
@@ -69,8 +66,8 @@ export function EventList({
                     {event.location}
                   </span>
                 )}
-              </div>
-              {!compact && event.description && (
+              </p>
+              {!compact && !archive && event.description && (
                 <p className="event-description">{event.description}</p>
               )}
             </div>
@@ -79,13 +76,13 @@ export function EventList({
               href={event.calendarUrl}
               target="_blank"
               rel="noreferrer"
-              aria-label={`Open calendar for ${event.title}`}
+              aria-label={`Open ${event.title} in Google Calendar`}
             >
               <ArrowUpRight aria-hidden="true" />
             </a>
-          </article>
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }

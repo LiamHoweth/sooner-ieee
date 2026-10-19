@@ -36,3 +36,7 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
+# Taste Skill working files (screenshots, sheets)
+.taste-skill/

@@ -1,129 +1,147 @@
-import {
-  ArrowRight,
-  ArrowUpRight,
-  CalendarDays,
-  CircuitBoard,
-  UsersRound,
-} from 'lucide-react';
+import { ArrowRight, ArrowUpRight, CalendarDays, MapPin } from 'lucide-react';
 
 import { EventList } from '@/components/event-list';
+import { LogoCoin } from '@/components/logo-coin';
+import { RegionResults } from '@/components/region-results';
 import { getChapterEventFeed } from '@/lib/calendar';
+import { achievements, chapter, programs, socialLinks } from '@/lib/chapter-content';
+import { photos } from '@/lib/photos';
 import { sitePath } from '@/lib/site-path';
-import {
-  achievements,
-  chapter,
-  programs,
-  socialLinks,
-} from '@/lib/chapter-content';
 
 const discord = socialLinks.find((link) => link.label === 'Discord')!;
-const newsletter = socialLinks.find((link) => link.label === 'Newsletter')!;
+const joinLinks = ['Discord', 'Newsletter', 'OU Engage', 'IEEE Membership'].map(
+  (label) => socialLinks.find((link) => link.label === label)!,
+);
+const joinActions: Record<string, string> = {
+  Discord: 'Join the server',
+  Newsletter: 'Subscribe',
+  'OU Engage': 'Join on Engage',
+  'IEEE Membership': 'Explore IEEE',
+};
+
+function nextEventLabel(start: string, allDay: boolean) {
+  const date = new Date(start);
+  const day = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+  if (allDay) return day;
+  const time = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+  return `${day} · ${time}`;
+}
 
 export default async function Home() {
   const eventFeed = await getChapterEventFeed();
   const upcoming = eventFeed.upcoming.slice(0, 3);
+  const next = upcoming[0];
   const buildPrograms = programs.filter((program) => program.category === 'build');
-  const connectPrograms = programs.filter(
-    (program) => program.category === 'connect',
-  );
+  const connectPrograms = programs.filter((program) => program.category === 'connect');
 
   return (
     <main id="main-content">
-      <section className="hero">
-        <div className="hero-copy">
-          <div className="hero-linework" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-          <div className="hero-copy-inner">
-            <p className="eyebrow">IEEE STUDENT BRANCH · UNIVERSITY OF OKLAHOMA</p>
+      <section className="home-hero">
+        <img
+          className="home-hero-photo"
+          src={photos.stormRadar.image.src}
+          width={photos.stormRadar.image.width}
+          height={photos.stormRadar.image.height}
+          alt=""
+          fetchPriority="high"
+        />
+        <div className="site-container home-hero-grid">
+          <div className="home-hero-copy">
             <h1>
-              <span>BUILD.</span>
-              <span className="outline-word">COMPETE.</span>
-              <span className="serif-word">CONNECT.</span>
+              <span>Build. Compete.</span>
+              <span>Connect.</span>
             </h1>
-            <p className="hero-summary">
-              OU’s student community for hands-on engineering, regional
-              competition, and the professional connections that carry beyond
-              campus.
+            <p className="home-hero-summary">
+              The IEEE student branch at the University of Oklahoma. Hands-on
+              projects, Region 5 competitions, and engineers worth meeting, open
+              to every OU student.
             </p>
             <div className="hero-actions">
-              <a className="button button-light" href={discord.href} target="_blank" rel="noreferrer">
+              <a className="button button-crimson" href={discord.href} target="_blank" rel="noreferrer">
                 Join the Discord
                 <ArrowUpRight aria-hidden="true" />
               </a>
-              <a className="text-link text-link-light" href={sitePath('/events')}>
-                View all events
+              <a className="button button-outline-light" href={sitePath('/events')}>
+                See upcoming events
                 <ArrowRight aria-hidden="true" />
               </a>
             </div>
           </div>
+          <LogoCoin className="home-hero-coin" />
         </div>
 
-        <aside className="hero-event-panel" aria-labelledby="next-event-title">
-          <div>
-            <p className="eyebrow" id="next-event-title">
-              NEXT ON THE CALENDAR
-            </p>
-            {upcoming.length > 0 ? (
+        <div className="next-up">
+          <div className="site-container next-up-inner">
+            <p className="next-up-label">Next up</p>
+            {next ? (
               <>
-                <p className="hero-event-date">
-                  {new Intl.DateTimeFormat('en-US', {
-                    timeZone: 'America/Chicago',
-                    month: 'short',
-                    day: 'numeric',
-                  }).format(new Date(upcoming[0].start))}
+                <p className="next-up-title">{next.title}</p>
+                <p className="next-up-meta">
+                  <span>
+                    <CalendarDays aria-hidden="true" />
+                    {nextEventLabel(next.start, next.allDay)}
+                  </span>
+                  {next.location && (
+                    <span>
+                      <MapPin aria-hidden="true" />
+                      {next.location}
+                    </span>
+                  )}
                 </p>
-                <h2>{upcoming[0].title}</h2>
-                {upcoming[0].location && <p>{upcoming[0].location}</p>}
+                <a className="next-up-link" href={sitePath('/events')}>
+                  All events
+                  <ArrowRight aria-hidden="true" />
+                </a>
               </>
             ) : (
               <>
-                <CalendarDays aria-hidden="true" className="hero-panel-icon" />
-                <h2>Fall events are being finalized.</h2>
-                <p>
-                  Join Discord for the quickest updates, or subscribe to the
-                  chapter calendar.
-                </p>
+                <p className="next-up-title">New dates are on the way.</p>
+                <a className="next-up-link" href={discord.href} target="_blank" rel="noreferrer">
+                  Hear first on Discord
+                  <ArrowUpRight aria-hidden="true" />
+                </a>
               </>
             )}
           </div>
-          <a href={chapter.calendarUrl} target="_blank" rel="noreferrer">
-            Open OU IEEE Events
-            <ArrowUpRight aria-hidden="true" />
-          </a>
-        </aside>
+        </div>
       </section>
 
-      <section className="home-events section-pad">
+      <section className="home-events section-pad" aria-labelledby="home-events-title">
         <div className="site-container">
-          <div className="section-heading-grid">
-            <span className="section-index">01</span>
-            <div>
-              <p className="eyebrow eyebrow-crimson">WHAT’S NEXT</p>
-              <h2>Show up. Meet people. Make something.</h2>
-            </div>
+          <div className="section-head" data-reveal>
+            <h2 className="display-title" id="home-events-title">Events</h2>
             <p>
-              Workshops, speakers, project sessions, and career connections—open
-              to OU students without requiring IEEE membership.
+              Workshops, speakers, project nights, and company visits. Open to
+              every OU student.
             </p>
+            <a className="button button-outline" href={sitePath('/events')}>
+              Full calendar
+              <ArrowRight aria-hidden="true" />
+            </a>
           </div>
 
           {upcoming.length > 0 ? (
             <EventList events={upcoming} compact />
           ) : (
-            <div className="calendar-empty">
+            <div className="empty-panel" data-reveal>
+              <CalendarDays aria-hidden="true" />
               <div>
-                <CalendarDays aria-hidden="true" />
-                <p className="eyebrow">CALENDAR UPDATE</p>
+                <h3>New semester dates are on the way.</h3>
+                <p>
+                  The public calendar has no upcoming dates yet. Discord is the
+                  fastest way to hear about the first meeting.
+                </p>
               </div>
-              <h3>New semester dates are on the way.</h3>
-              <p>
-                The public calendar has no upcoming dates yet. Discord is the
-                best place to hear about the first meeting and fall opportunities.
-              </p>
-              <a className="text-link" href={discord.href} target="_blank" rel="noreferrer">
+              <a className="button button-crimson" href={discord.href} target="_blank" rel="noreferrer">
                 Join the Discord
                 <ArrowUpRight aria-hidden="true" />
               </a>
@@ -132,107 +150,95 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="programs-section">
-        <div className="site-container programs-grid">
-          <div className="program-column program-build">
-            <div className="program-heading">
-              <CircuitBoard aria-hidden="true" />
-              <div>
-                <p className="eyebrow">BUILD & COMPETE</p>
-                <h2>Turn coursework into working systems.</h2>
-              </div>
-            </div>
-            <ol>
-              {buildPrograms.map((program, index) => (
-                <li key={program.title}>
-                  <span>0{index + 1}</span>
-                  <div>
-                    <h3>{program.title}</h3>
-                    <p>{program.description}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          <div className="program-column program-connect">
-            <div className="program-heading">
-              <UsersRound aria-hidden="true" />
-              <div>
-                <p className="eyebrow">LEARN & CONNECT</p>
-                <h2>Find the people behind the opportunities.</h2>
-              </div>
-            </div>
-            <ol>
-              {connectPrograms.map((program, index) => (
-                <li key={program.title}>
-                  <span>0{index + 1}</span>
-                  <div>
-                    <h3>{program.title}</h3>
-                    <p>{program.description}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-        <div className="site-container program-link-row">
-          <a className="text-link" href={sitePath('/projects')}>
-            Explore programs and projects
-            <ArrowRight aria-hidden="true" />
-          </a>
-        </div>
-      </section>
-
-      <section className="achievement-section section-pad">
-        <div className="site-container achievement-grid">
-          <div className="achievement-number" aria-hidden="true">
-            <span>R5</span>
-            <strong>26</strong>
-          </div>
-          <div className="achievement-copy">
-            <p className="eyebrow">IEEE REGION 5 · 2026</p>
-            <h2>A branch built to represent Oklahoma.</h2>
-            <p>
-              OU students returned from the 2026 Region 5 Conference with
-              branch recognition and podium finishes across three competitions.
-            </p>
-            <ul>
-              {achievements.map((achievement) => (
-                <li key={achievement.title}>{achievement.title}</li>
-              ))}
-            </ul>
-            <a
-              className="text-link text-link-light"
-              href={achievements[0].source}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Read the conference recap
-              <ArrowUpRight aria-hidden="true" />
-            </a>
+      <section className="tile-section" aria-labelledby="home-programs-title">
+        <div className="site-container">
+          <h2 className="tile-section-title" id="home-programs-title" data-reveal>
+            What we do
+          </h2>
+          <div className="tile-grid" data-reveal>
+            <article className="tile">
+              <h3 className="tile-word">Build</h3>
+              <p className="tile-lead">Turn coursework into working systems.</p>
+              <ul className="tile-list">
+                {buildPrograms.map((program) => (
+                  <li key={program.title}>{program.title}</li>
+                ))}
+              </ul>
+              <a className="tile-button" href={sitePath('/projects')}>
+                See projects
+              </a>
+            </article>
+            <figure className="tile tile-photo">
+              <img
+                src={photos.electronicsBench.image.src}
+                width={photos.electronicsBench.image.width}
+                height={photos.electronicsBench.image.height}
+                alt={photos.electronicsBench.alt}
+                loading="lazy"
+              />
+            </figure>
+            <figure className="tile tile-photo">
+              <img
+                src={photos.oscilloscope.image.src}
+                width={photos.oscilloscope.image.width}
+                height={photos.oscilloscope.image.height}
+                alt={photos.oscilloscope.alt}
+                loading="lazy"
+              />
+            </figure>
+            <article className="tile">
+              <h3 className="tile-word">Connect</h3>
+              <p className="tile-lead">Meet the people behind the opportunities.</p>
+              <ul className="tile-list">
+                {connectPrograms.map((program) => (
+                  <li key={program.title}>{program.title}</li>
+                ))}
+              </ul>
+              <a className="tile-button" href={sitePath('/about')}>
+                Meet the chapter
+              </a>
+            </article>
           </div>
         </div>
       </section>
 
-      <section className="home-cta section-pad">
-        <div className="site-container cta-grid">
-          <p className="eyebrow eyebrow-crimson">YOUR NEXT MOVE</p>
-          <h2>Start with one conversation.</h2>
-          <p>
-            Join the chapter Discord for meeting details and team updates, or
-            get the biweekly newsletter if you prefer the highlights.
+      <RegionResults id="home-results-title" title="Region 5, 2026">
+        <p>
+          OU came home from the IEEE Region 5 Conference as the{' '}
+          <strong>{achievements[0].title}</strong>, with podium finishes in
+          three competitions.
+        </p>
+      </RegionResults>
+
+      <section className="join-section" aria-labelledby="home-join-title">
+        <img
+          className="join-section-photo"
+          src={photos.bizzellLibrary.image.src}
+          width={photos.bizzellLibrary.image.width}
+          height={photos.bizzellLibrary.image.height}
+          alt=""
+          loading="lazy"
+        />
+        <div className="site-container">
+          <h2 className="display-title" id="home-join-title" data-reveal>
+            Take the next step
+          </h2>
+          <div className="join-grid" data-reveal>
+            {joinLinks.map((link) => (
+              <a key={link.label} className="join-card" href={link.href} target="_blank" rel="noreferrer">
+                <h3>{link.label}</h3>
+                <p>{link.description}</p>
+                <span className="join-card-action">
+                  {joinActions[link.label]}
+                  <ArrowUpRight aria-hidden="true" />
+                </span>
+              </a>
+            ))}
+          </div>
+          <p className="join-note" data-reveal>
+            Questions first? Email{' '}
+            <a href={`mailto:${chapter.email}`}>{chapter.email}</a>.
           </p>
-          <div className="cta-actions">
-            <a className="button button-dark" href={discord.href} target="_blank" rel="noreferrer">
-              Join Discord
-              <ArrowUpRight aria-hidden="true" />
-            </a>
-            <a className="text-link" href={newsletter.href} target="_blank" rel="noreferrer">
-              Get the newsletter
-              <ArrowUpRight aria-hidden="true" />
-            </a>
-          </div>
         </div>
       </section>
     </main>

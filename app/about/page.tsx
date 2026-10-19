@@ -1,209 +1,183 @@
 import type { Metadata } from 'next';
-import {
-  ArrowUpRight,
-  Award,
-  Globe2,
-  Mail,
-  MapPin,
-  RadioTower,
-} from 'lucide-react';
+import { ArrowUpRight, Mail } from 'lucide-react';
 
-import { PageIntro } from '@/components/page-intro';
-import { ChapterLogo } from '@/components/chapter-logo';
-import {
-  achievements,
-  chapter,
-  officers,
-  socialLinks,
-} from '@/lib/chapter-content';
+import { alternateMarks } from '@/components/chapter-logo';
+import { LogoCoin } from '@/components/logo-coin';
+import { PageHero } from '@/components/page-hero';
+import { achievements, chapter, officers, socialLinks } from '@/lib/chapter-content';
+import { photos } from '@/lib/photos';
 
 export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'Meet IEEE Sooners and learn how the student branch connects OU students with engineering projects, people, and opportunities.',
+    'Meet IEEE Sooners: the IEEE Student Branch at the University of Oklahoma, its leadership, official logos, and how to reach the chapter.',
 };
+
+const facts = [
+  { value: 'Norman, Oklahoma', detail: 'Home at the Gallogly College of Engineering, University of Oklahoma.' },
+  { value: 'IEEE Region 5', detail: 'A student branch within the IEEE Oklahoma City Section.' },
+  { value: 'IEEE worldwide', detail: 'Part of the largest technical professional organization for engineering and technology.' },
+];
 
 export default function AboutPage() {
   return (
     <main id="main-content">
-      <PageIntro
-        index="03"
-        eyebrow="ABOUT IEEE SOONERS"
-        title="Global engineering. Local community."
-        summary="The University of Oklahoma Student Branch brings IEEE’s professional network into a campus setting through technical work, peer leadership, and direct connections to faculty and industry."
-      />
+      <PageHero
+        title="About"
+        lead="Global engineering. Local community."
+        summary="The University of Oklahoma Student Branch brings IEEE’s professional network to campus through technical work, peer leadership, and direct connections to faculty and industry."
+        photo={photos.bizzellLibrary}
+      >
+        <a className="button button-light" href={`mailto:${chapter.email}`}>
+          <Mail aria-hidden="true" />
+          {chapter.email}
+        </a>
+      </PageHero>
 
-      <section className="about-mission content-section">
-        <div className="site-container about-mission-grid">
-          <div>
-            <p className="eyebrow eyebrow-crimson">WHY WE EXIST</p>
-            <h2>To make engineering feel less solitary.</h2>
-          </div>
-          <div className="about-mission-copy">
+      <section className="content-section" aria-labelledby="mission-title">
+        <div className="site-container mission-grid">
+          <div className="mission-copy" data-reveal>
+            <h2 className="display-title" id="mission-title">
+              Why we exist
+            </h2>
             <p className="lead-copy">
-              IEEE Sooners gives students a place to work alongside people who
-              are learning the same hard things—and to meet professionals who
-              can show where those skills lead.
+              To make engineering feel less solitary. IEEE Sooners gives
+              students a place to work alongside people learning the same hard
+              things, and to meet professionals who show where those skills lead.
             </p>
             <p>
-              The branch welcomes students interested in electrical engineering,
-              computer engineering, computing, robotics, research, and adjacent
-              technical fields. OU events are open without requiring paid IEEE
-              membership.
+              The branch welcomes students in electrical and computer
+              engineering, computer science, robotics, research, and every
+              adjacent technical field. Chapter events are open to all OU
+              students without paid IEEE membership.
             </p>
           </div>
+          <figure className="mission-photo" data-reveal>
+            <img
+              src={photos.campusAerial.image.src}
+              width={photos.campusAerial.image.width}
+              height={photos.campusAerial.image.height}
+              alt={photos.campusAerial.alt}
+              loading="lazy"
+            />
+          </figure>
         </div>
-      </section>
-
-      <section className="chapter-brand-section content-section" aria-labelledby="chapter-brand-title">
-        <div className="site-container">
-          <div className="content-section-heading">
-            <div>
-              <p className="eyebrow eyebrow-crimson">IEEE SOONERS</p>
-              <h2 id="chapter-brand-title">Our official logos.</h2>
-            </div>
-            <p>
-              Our student branch identity in IEEE blue, Oklahoma crimson, and
-              alternate colors.
-            </p>
-          </div>
-          <div className="chapter-logo-gallery">
-            <figure>
-              <div className="chapter-logo-stage">
-                <ChapterLogo
-                  className="chapter-logo-emblem"
-                  label="Primary IEEE Sooners logo in blue and white, with a tornado at its center"
-                />
-              </div>
-              <figcaption><span>01</span>Primary</figcaption>
-            </figure>
-            <figure>
-              <div className="chapter-logo-stage">
-                <ChapterLogo
-                  variant="secondary"
-                  className="chapter-logo-emblem"
-                  label="Secondary IEEE Sooners logo in crimson and white"
-                />
-              </div>
-              <figcaption><span>02</span>Secondary</figcaption>
-            </figure>
-            <figure>
-              <div className="chapter-logo-stage">
-                <ChapterLogo
-                  variant="alternates"
-                  className="chapter-logo-alternates"
-                  label="Six alternate IEEE Sooners logos in crimson, blue, red, black, white, and outlined red"
-                />
-              </div>
-              <figcaption><span>03</span>Alternates</figcaption>
-            </figure>
-          </div>
-        </div>
-      </section>
-
-      <section className="identity-band">
-        <div className="site-container identity-grid">
-          <article>
-            <MapPin aria-hidden="true" />
-            <p className="eyebrow">HOME</p>
-            <h2>Norman, Oklahoma</h2>
-            <p>Gallogly College of Engineering at the University of Oklahoma.</p>
-          </article>
-          <article>
-            <RadioTower aria-hidden="true" />
-            <p className="eyebrow">BRANCH</p>
-            <h2>IEEE Region 5</h2>
-            <p>A student branch within the Oklahoma City Section.</p>
-          </article>
-          <article>
-            <Globe2 aria-hidden="true" />
-            <p className="eyebrow">NETWORK</p>
-            <h2>IEEE</h2>
-            <p>A global professional community for engineering and technology.</p>
-          </article>
-        </div>
-      </section>
-
-      <section className="leadership-section content-section">
-        <div className="site-container leadership-grid">
-          <header>
-            <p className="eyebrow eyebrow-crimson">CHAPTER CONTACT</p>
-            <h2>A direct line to the people running the branch.</h2>
-          </header>
-          <div className="contact-ledger">
-            <article>
-              <span>Main point of contact</span>
-              <h3>IEEE Sooners</h3>
-              <a href={`mailto:${chapter.email}`}>
-                <Mail aria-hidden="true" />
-                {chapter.email}
-              </a>
+        <div className="site-container fact-grid" data-reveal>
+          {facts.map((fact) => (
+            <article key={fact.value}>
+              <h3>{fact.value}</h3>
+              <p>{fact.detail}</p>
             </article>
-            <article>
-              <span>{chapter.advisor.role}</span>
+          ))}
+        </div>
+      </section>
+
+      <section className="marks-section" aria-labelledby="marks-title">
+        <div className="site-container marks-grid">
+          <LogoCoin size="feature" className="marks-coin" />
+          <div className="marks-copy" data-reveal>
+            <h2 className="display-title" id="marks-title">
+              Our official marks
+            </h2>
+            <p>
+              The IEEE Sooners name and logos were approved for the branch this
+              fall. The tornado is Norman’s weather; the arrow is the current
+              rising through it. Blue is the primary mark, crimson the
+              secondary.
+            </p>
+            <p className="marks-hint">Flip the coin to see both sides.</p>
+            <ul className="alternate-marks" aria-label="Alternate logo colorways">
+              {alternateMarks.map((mark) => (
+                <li key={mark.label}>
+                  <img src={mark.image.src} width={128} height={128} alt="" loading="lazy" />
+                  <span>{mark.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="content-section leadership-section" aria-labelledby="leadership-title">
+        <div className="site-container">
+          <div className="section-head" data-reveal>
+            <h2 className="display-title" id="leadership-title">
+              Leadership
+            </h2>
+            <p>A direct line to the people running the branch.</p>
+          </div>
+          <div className="people-grid" data-reveal>
+            {officers.map((officer) => (
+              <article className="person-card" key={`${officer.role}-${officer.name}`}>
+                {officer.image && <img src={officer.image} alt="" loading="lazy" />}
+                <p className="person-role">{officer.role}</p>
+                <h3>{officer.name}</h3>
+                {officer.email && (
+                  <a href={`mailto:${officer.email}`}>
+                    <Mail aria-hidden="true" />
+                    {officer.email}
+                  </a>
+                )}
+              </article>
+            ))}
+            <article className="person-card">
+              <p className="person-role">{chapter.advisor.role}</p>
               <h3>{chapter.advisor.name}</h3>
               <a href={`mailto:${chapter.advisor.email}`}>
                 <Mail aria-hidden="true" />
                 {chapter.advisor.email}
               </a>
             </article>
+            <article className="person-card person-card-crimson">
+              <p className="person-role">Student officers</p>
+              <h3>Chapter leadership</h3>
+              <a href={`mailto:${chapter.email}`}>
+                <Mail aria-hidden="true" />
+                {chapter.email}
+              </a>
+            </article>
           </div>
         </div>
-
-        {officers.length > 0 && (
-          <div className="site-container officer-list">
-            {officers.map((officer) => (
-              <article key={`${officer.role}-${officer.name}`}>
-                <p>{officer.role}</p>
-                <h3>{officer.name}</h3>
-                {officer.email && <a href={`mailto:${officer.email}`}>{officer.email}</a>}
-              </article>
-            ))}
-          </div>
-        )}
       </section>
 
-      <section className="recognition-section content-section">
+      <section className="recognition-section" aria-labelledby="recognition-title">
         <div className="site-container recognition-grid">
-          <header>
-            <Award aria-hidden="true" />
-            <p className="eyebrow">VERIFIED 2026 RESULTS</p>
-            <h2>Recognition earned together.</h2>
-          </header>
-          <div className="recognition-list">
-            {achievements.map((achievement) => (
-              <article key={achievement.title}>
-                <span>{achievement.year}</span>
-                <div>
-                  <h3>{achievement.title}</h3>
-                  <p>{achievement.detail}</p>
-                </div>
-              </article>
-            ))}
-            <a className="text-link text-link-light" href={achievements[0].source} target="_blank" rel="noreferrer">
+          <div data-reveal>
+            <h2 className="display-title" id="recognition-title">
+              Recognition
+            </h2>
+            <p>Earned together at the 2026 IEEE Region 5 Conference.</p>
+            <a className="button button-outline" href={achievements[0].source} target="_blank" rel="noreferrer">
               View source
               <ArrowUpRight aria-hidden="true" />
             </a>
           </div>
+          <ol className="recognition-list" data-reveal>
+            {achievements.map((achievement) => (
+              <li key={achievement.title}>
+                <h3>{achievement.title}</h3>
+                <p>{achievement.detail}</p>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
-      <section className="social-ledger content-section">
+      <section className="content-section channels-section" aria-labelledby="channels-title">
         <div className="site-container">
-          <div className="content-section-heading">
-            <p className="eyebrow eyebrow-crimson">FIND THE CHAPTER</p>
-            <h2>Choose the channel that fits.</h2>
+          <div className="section-head" data-reveal>
+            <h2 className="display-title" id="channels-title">
+              Find the chapter
+            </h2>
+            <p>Pick the channel that fits how you like to keep up.</p>
           </div>
-          <div className="social-link-list">
-            {socialLinks.map((link, index) => (
-              <a key={link.label} href={link.href} target="_blank" rel="noreferrer">
-                <span>0{index + 1}</span>
-                <div>
-                  <h3>{link.label}</h3>
-                  <p>{link.description}</p>
-                </div>
+          <div className="channel-grid" data-reveal>
+            {socialLinks.map((link) => (
+              <a key={link.label} className="channel-card" href={link.href} target="_blank" rel="noreferrer">
+                <h3>{link.label}</h3>
+                <p>{link.description}</p>
                 <ArrowUpRight aria-hidden="true" />
               </a>
             ))}

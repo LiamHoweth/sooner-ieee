@@ -1,17 +1,11 @@
 import type { Metadata } from 'next';
-import {
-  ArrowRight,
-  ArrowUpRight,
-  CircuitBoard,
-  Presentation,
-  Trophy,
-  UsersRound,
-  Wrench,
-} from 'lucide-react';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
 
-import { PageIntro } from '@/components/page-intro';
+import { PageHero } from '@/components/page-hero';
+import { RegionResults } from '@/components/region-results';
+import { programs, socialLinks } from '@/lib/chapter-content';
+import { photos } from '@/lib/photos';
 import { sitePath } from '@/lib/site-path';
-import { achievements, programs, socialLinks } from '@/lib/chapter-content';
 
 export const dynamic = 'force-static';
 
@@ -23,25 +17,40 @@ export const metadata: Metadata = {
 
 const discord = socialLinks.find((link) => link.label === 'Discord')!;
 
-const buildPrograms = programs.filter((program) => program.category === 'build');
-const connectPrograms = programs.filter((program) => program.category === 'connect');
+const tracks = [
+  {
+    id: 'build',
+    title: 'Build & compete',
+    lead: 'Make the theory answer back.',
+    photo: photos.electronicsBench,
+    programs: programs.filter((program) => program.category === 'build'),
+  },
+  {
+    id: 'connect',
+    title: 'Learn & connect',
+    lead: 'Meet the people already doing the work.',
+    photo: photos.campusAerial,
+    programs: programs.filter((program) => program.category === 'connect'),
+  },
+];
 
 export default function ProjectsPage() {
   return (
     <main id="main-content">
-      <PageIntro
-        index="02"
-        eyebrow="PROJECTS & PROGRAMS"
-        title="Engineering happens when the notes close."
-        summary="The chapter balances hands-on technical work with the professional relationships that help students decide where their engineering can go next."
-      />
+      <PageHero
+        title="Projects"
+        lead="Engineering happens when the notes close."
+        summary="The chapter balances hands-on technical work with the relationships that help students decide where their engineering goes next."
+        photo={photos.oscilloscope}
+      >
+        <a className="button button-light" href={discord.href} target="_blank" rel="noreferrer">
+          Ask what is active
+          <ArrowUpRight aria-hidden="true" />
+        </a>
+      </PageHero>
 
-      <section className="projects-manifesto">
-        <div className="site-container projects-manifesto-grid">
-          <div className="manifesto-label">
-            <Wrench aria-hidden="true" />
-            <p className="eyebrow">THE WORK</p>
-          </div>
+      <section className="manifesto" aria-label="How the chapter works">
+        <div className="site-container manifesto-grid" data-reveal>
           <blockquote>
             Build something real. Explain it clearly. Learn from the person next
             to you.
@@ -53,86 +62,65 @@ export default function ProjectsPage() {
         </div>
       </section>
 
-      <section className="program-detail-section">
-        <div className="site-container program-detail-grid">
-          <header>
-            <CircuitBoard aria-hidden="true" />
-            <p className="eyebrow eyebrow-crimson">BUILD & COMPETE</p>
-            <h2>Make the theory answer back.</h2>
-          </header>
-          <div className="program-detail-list">
-            {buildPrograms.map((program, index) => (
-              <article key={program.title}>
-                <span>0{index + 1}</span>
-                <div>
-                  <h3>{program.title}</h3>
-                  <p>{program.description}</p>
-                  <small>{program.evidence}</small>
-                </div>
-              </article>
-            ))}
+      {tracks.map((track, trackIndex) => (
+        <section
+          key={track.id}
+          className={trackIndex % 2 ? 'track-section track-section-flip' : 'track-section'}
+          aria-labelledby={`${track.id}-title`}
+        >
+          <div className="site-container track-grid">
+            <figure className="track-photo" data-reveal>
+              <img
+                src={track.photo.image.src}
+                width={track.photo.image.width}
+                height={track.photo.image.height}
+                alt={track.photo.alt}
+                loading="lazy"
+              />
+            </figure>
+            <div className="track-copy" data-reveal>
+              <h2 className="display-title" id={`${track.id}-title`}>
+                {track.title}
+              </h2>
+              <p className="track-lead">{track.lead}</p>
+              <ul className="track-list">
+                {track.programs.map((program) => (
+                  <li key={program.title}>
+                    <h3>{program.title}</h3>
+                    <p>{program.description}</p>
+                    <small>{program.evidence}</small>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ))}
 
-      <section className="program-detail-section program-detail-dark">
-        <div className="site-container program-detail-grid">
-          <header>
-            <UsersRound aria-hidden="true" />
-            <p className="eyebrow">LEARN & CONNECT</p>
-            <h2>Meet people doing the work already.</h2>
-          </header>
-          <div className="program-detail-list">
-            {connectPrograms.map((program, index) => (
-              <article key={program.title}>
-                <span>0{index + 1}</span>
-                <div>
-                  <h3>{program.title}</h3>
-                  <p>{program.description}</p>
-                  <small>{program.evidence}</small>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+      <RegionResults id="results-title" title="Practice, then podiums" linkLabel="Conference recap" compact>
+        <p>
+          At the 2026 IEEE Region 5 Conference, OU students placed in three
+          competitions.
+        </p>
+      </RegionResults>
 
-      <section className="results-strip">
-        <div className="site-container results-grid">
+      <section className="cta-band" aria-labelledby="projects-cta-title">
+        <div className="site-container cta-band-inner cta-band-split" data-reveal>
           <div>
-            <Trophy aria-hidden="true" />
-            <p className="eyebrow">2026 REGION 5</p>
-            <h2>Practice turned into podium finishes.</h2>
+            <h2 className="display-title" id="projects-cta-title">
+              No finished idea needed
+            </h2>
+            <p>
+              Start in Discord, ask what is active this semester, and meet the
+              students already working on it.
+            </p>
           </div>
-          <ul>
-            {achievements.slice(1).map((achievement) => (
-              <li key={achievement.title}>
-                <Presentation aria-hidden="true" />
-                <span>{achievement.title}</span>
-              </li>
-            ))}
-          </ul>
-          <a href={achievements[0].source} target="_blank" rel="noreferrer">
-            Verified conference recap
-            <ArrowUpRight aria-hidden="true" />
-          </a>
-        </div>
-      </section>
-
-      <section className="project-cta section-pad">
-        <div className="site-container cta-grid">
-          <p className="eyebrow eyebrow-crimson">FIND YOUR PLACE</p>
-          <h2>You do not need a finished idea to begin.</h2>
-          <p>
-            Start in Discord, ask what is active this semester, and meet the
-            students already working on it.
-          </p>
-          <div className="cta-actions">
-            <a className="button button-dark" href={discord.href} target="_blank" rel="noreferrer">
-              Join Discord
+          <div className="cta-band-actions cta-band-stack">
+            <a className="button button-light" href={discord.href} target="_blank" rel="noreferrer">
+              Join the Discord
               <ArrowUpRight aria-hidden="true" />
             </a>
-            <a className="text-link" href={sitePath('/events')}>
+            <a className="button button-outline-light" href={sitePath('/events')}>
               Find the next event
               <ArrowRight aria-hidden="true" />
             </a>
