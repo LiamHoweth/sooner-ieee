@@ -67,6 +67,26 @@ Set these in Railway → service → **Variables**. Never commit real values.
 Without SMTP the site works the same, except that sponsor alerts are not emailed and "Forgot
 password" tells people to ask an owner, who can reset it from **Admins**.
 
+## Railway config file deadline
+
+`server/railway.json` uses Railway's Config as Code, which Railway has deprecated. It keeps working
+**until 2026-12-01**. After the project exists, migrate it to Infrastructure as Code from `server/`:
+
+```bash
+railway config migrate --show
+```
+
+```bash
+railway config migrate --apply
+```
+
+```bash
+railway config migrate cutover
+```
+
+Commit the generated `.railway/railway.ts`. Delete `railway.json` only after the cutover. See
+[Railway's IaC migration guide](https://docs.railway.com/infrastructure-as-code#migrating-from-config-as-code).
+
 ## First-time Railway setup
 
 1. **Create the service.** In Railway, choose **New Project → Deploy from GitHub repo** and pick
