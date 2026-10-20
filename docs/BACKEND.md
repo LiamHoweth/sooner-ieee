@@ -67,55 +67,88 @@ Set these in Railway → service → **Variables**. Never commit real values.
 Without SMTP the site works the same, except that sponsor alerts are not emailed and "Forgot
 password" tells people to ask an owner, who can reset it from **Admins**.
 
-## Railway config file deadline
+## Current deployment
 
-`server/railway.json` uses Railway's Config as Code, which Railway has deprecated. It keeps working
-**until 2026-12-01**. After the project exists, migrate it to Infrastructure as Code from `server/`:
+| | |
+|---|---|
+| Railway project | **IEEE Sooners** (workspace "Liam Howeth's Projects") |
+| Service | `ieee-sooners-api`, deployed from GitHub `LiamHoweth/sooner-ieee`, branch `main`, root `/server` |
+| Public URL | https://ieee-sooners-api-production.up.railway.app |
+| Volume | `ieee-sooners-api-volume`, 5 GB, mounted at `/data` |
+| Website variable | GitHub Actions variable `IEEE_API_URL` = the public URL above |
+
+Pushes to `main` that change `server/**` redeploy the API automatically. Website-only pushes don't.
+
+## Infrastructure as code
+
+The service's settings live in **`server/.railway/railway.ts`**, using Railway Infrastructure as
+Code:
+- the GitHub source and `/server` root
+- the build and start commands
+- the health check and restart policy
+- one replica
+- the required `/data` mount and the volume
+
+Environment variables are **not** in that file (they're "unmanaged"), so no secrets are in the repo.
+
+To change a setting, edit the file and run these from `server/`:
 
 ```bash
-railway config migrate --show
+railway config plan
 ```
+
+Read the plan. **It must say `0 to destroy`.** Never apply a plan that detaches or removes
+`ieee-sooners-api-volume`: that is every post, image and admin account.
 
 ```bash
-railway config migrate --apply
+railway config apply
 ```
 
-```bash
-railway config migrate cutover
-```
+The old `server/railway.json` (Config as Code, which Railway retires on 2026-12-01) has been
+removed. Nothing reads it any more.
 
-Commit the generated `.railway/railway.ts`. Delete `railway.json` only after the cutover. See
-[Railway's IaC migration guide](https://docs.railway.com/infrastructure-as-code#migrating-from-config-as-code).
+## Setting it up again from scratch (new account)
 
-## First-time Railway setup
+1. Install the CLI (`brew install railway`) and sign in (`railway login`).
+2. In `server/`, create a project: `railway init --name "IEEE Sooners"`.
+3. Add the service, a volume and a domain:
+   - `railway add --service ieee-sooners-api`
+   - `railway service link ieee-sooners-api`
+   - `railway volume add --mount-path /data`
+   - `railway domain --service ieee-sooners-api --port 8080`
+4. Set the variables from the table above with
+   `railway variable set KEY=value --service ieee-sooners-api --skip-deploys`. Include `PORT=8080`
+   and the `BOOTSTRAP_OWNER_*` values.
+5. Run `npm install`, then `railway config plan`. If it shows **0 to destroy**, run
+   `railway config apply`. This connects the GitHub repo with root `/server` and starts a deploy.
+   - If the repo has a new owner, change the `github('…')` line in `.railway/railway.ts` first.
+   - Railway's GitHub app must have access to the repo.
+6. Check `https://<domain>/api/health`. It should return `{"ok":true,…}`.
+7. In GitHub, go to **Settings → Secrets and variables → Actions → Variables** and set
+   `IEEE_API_URL` = `https://<domain>`. Then re-run **Deploy GitHub Pages**.
+8. Sign in at `/admin.html` with the bootstrap owner, then delete the `BOOTSTRAP_OWNER_*` variables.
+9. Optional: under the service **Settings**, turn on **Wait for CI** so a failing test blocks
+   API deploys.
 
-1. **Create the service.** In Railway, choose **New Project → Deploy from GitHub repo** and pick
-   `LiamHoweth/sooner-ieee`.
-2. **Point it at the API folder.** Under service **Settings → Source**, set **Root Directory** to
-   `/server`. Railway then reads `server/railway.json`: Railpack, `npm ci && npm run build`,
-   `npm run start`, health check `/api/health`, restart on failure, one replica.
-   - Under **Settings → Source → Watch Paths**, add `/server/**` so website-only commits don't
-     redeploy the API.
-   - Turn on **Wait for CI** so a failing test blocks the deploy.
-3. **Attach storage.** Right-click the service → **Attach volume** → mount path `/data`.
-4. **Fill in variables.** Add the variables above, including the three `BOOTSTRAP_OWNER_*` values.
-5. **Give it a public address.** Under **Settings → Networking**, generate a public domain. Put that
-   URL in `PUBLIC_API_URL`, then redeploy.
-6. **Check it.** Open `https://<domain>/api/health`. You should see `{"ok":true,…}`.
-7. **Connect the website.** In GitHub, go to repo **Settings → Secrets and variables → Actions →
-   Variables** and add `IEEE_API_URL` = `https://<domain>`. Then re-run **Deploy GitHub Pages**
-   (Actions tab → Run workflow) or push any commit.
-8. **First sign-in.** Sign in at `/admin.html` with the bootstrap owner. Then delete the
-   `BOOTSTRAP_OWNER_*` variables in Railway; they are ignored once an admin exists.
-9. **Turn on backups.** In the service's **Backups** tab, schedule volume backups (daily or weekly).
+## Adding the first owner to an existing deployment
+
+The API runs fine with no admin accounts. To create the first owner:
+
+1. On your computer, run `cd server && npm run hash-password` and type the password.
+2. Set the variables. Setting them redeploys the service, which creates the owner because no admins
+   exist yet:
+   - `railway variable set BOOTSTRAP_OWNER_USERNAME=… BOOTSTRAP_OWNER_EMAIL=… --service ieee-sooners-api --skip-deploys`
+   - `railway variable set BOOTSTRAP_OWNER_PASSWORD_HASH='scrypt-v1$…' --service ieee-sooners-api`
+3. Sign in, then delete the three variables.
 
 ## Backups and restores
 
-There are three layers. Use at least two.
+There are three layers. Use every one that's available to you.
 
-1. **Railway volume backups** (Backups tab). Restoring creates a new volume from the snapshot and
-   redeploys. Restores only work inside the same project. See
-   [Railway's backup docs](https://docs.railway.com/volumes/backups).
+1. **Railway volume backups** need a **Pro** workspace. The current Hobby workspace can't schedule
+   them. If the chapter moves to Pro, turn on daily and weekly backups in the service's Backups tab.
+   See [Railway's backup docs](https://docs.railway.com/volumes/backups). Until then, rely on 2 and
+   3, and download a backup every semester.
 2. **Owner download** (Admin → My account → Backups):
    - *Database backup* is the full SQLite file: posts, applications and admin accounts with their
      password hashes. Treat it like a password.

@@ -11,4 +11,4 @@
 - The static site reaches the API through `NEXT_PUBLIC_API_URL` (local `.env.local`; Pages build from the `IEEE_API_URL` Actions variable). Without it, posts/apply/admin degrade to friendly "not connected" states. Admin auth uses bearer tokens (not cookies) because the site and API are on different domains.
 - Pages without a build-time page per post: posts render client-side at `/post?slug=…`. When adding exported pages, also add them to the link-rewrite list in `.github/workflows/deploy-pages.yml`.
 - Handoff, Railway setup, backups and the officer how-to live in `docs/`. Keep them current when changing auth, env vars or deploy steps.
-- Railway deprecated `server/railway.json` (Config as Code); it works only until 2026-12-01. Migrate with `railway config migrate` once the project exists (steps in docs/BACKEND.md).
+- Railway settings are Infrastructure as Code in `server/.railway/railway.ts` (variables unmanaged). Always run `railway config plan` from `server/` and require `0 to destroy` before `apply`; the volume `ieee-sooners-api-volume` holds all data. The workspace is Hobby, so scheduled volume backups are unavailable (Pro only).

@@ -9,7 +9,7 @@ person if you can, before your last semester ends.
 |---|---|---|
 | Code repository | Liam Howeth (GitHub `LiamHoweth`) | https://github.com/LiamHoweth/sooner-ieee |
 | Website hosting | GitHub Pages on that repo | https://liamhoweth.github.io/sooner-ieee/ |
-| API and database | Liam Howeth's Railway account | Railway project for `server/` (see docs/BACKEND.md) |
+| API and database | Liam Howeth's Railway account | Project **IEEE Sooners** → service `ieee-sooners-api` → https://ieee-sooners-api-production.up.railway.app |
 | Admin accounts | Inside the site (Admin → Admins) | `/admin.html` |
 | Event calendar | Chapter Google account `ieee.sooner@gmail.com` | Google Calendar |
 | Chapter email | `ieee@ou.edu` | OU |
@@ -50,7 +50,7 @@ Pick one:
      [Railway's project docs](https://docs.railway.com/projects).
 - **Redeploy from scratch on their account.**
   1. Download a **Database backup** and copy the images (docs/BACKEND.md → Backups).
-  2. Follow *First-time Railway setup* on their account.
+  2. Follow *Setting it up again from scratch* in docs/BACKEND.md on their account.
   3. Restore the backup onto the new volume.
   4. Update the GitHub `IEEE_API_URL` variable to the new Railway domain and redeploy Pages.
 
@@ -78,7 +78,7 @@ Either way, confirm:
 - [ ] Update current sponsors in `lib/chapter-content.ts` (logos need the sponsor's permission)
 - [ ] Check that the sponsorship packet link in `lib/chapter-content.ts` is current
 - [ ] Download a database backup (Admin → My account → Backups) and store it somewhere private
-- [ ] Confirm Railway volume backups are still scheduled
+- [ ] Railway volume backups need a Pro workspace. If you're on Pro, confirm they're scheduled; if not, the download in step 4 is your backup
 - [ ] Swap in new chapter photos (people pictured must be okay with it) and update the credits
 - [ ] Run `npm run lint && npm test` and `cd server && npm test`
 - [ ] Check the site on a phone
