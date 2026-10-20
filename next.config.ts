@@ -12,7 +12,12 @@ const nextConfig: NextConfig = {
   assetPrefix: siteBasePath,
   // Client-rendered navigation (including the mobile sheet) needs the same
   // Pages paths as the exported HTML; post-build HTML rewriting cannot reach it.
-  env: { NEXT_PUBLIC_SITE_BASE_PATH: siteBasePath },
+  // NEXT_PUBLIC_API_URL points at the Railway API (server/). Locally it comes from
+  // .env.local; on GitHub Pages from the IEEE_API_URL repository variable.
+  env: {
+    NEXT_PUBLIC_SITE_BASE_PATH: siteBasePath,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? '',
+  },
 };
 
 export default nextConfig;

@@ -10,7 +10,7 @@
     "build": "vinext build",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "test": "vitest run",
-    "lint": "oxlint app lib components/site-header.tsx components/site-footer.tsx components/event-list.tsx components/page-hero.tsx components/logo-coin.tsx components/chapter-logo.tsx components/calendar-embed.tsx components/region-results.tsx components/reveal-observer.tsx",
+    "lint": "oxlint app lib components --ignore-pattern 'components/ui/**'",
     "format": "oxfmt"
   },
   "dependencies": {

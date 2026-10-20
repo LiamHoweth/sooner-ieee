@@ -2,6 +2,7 @@ import { ArrowRight, ArrowUpRight, CalendarDays, MapPin } from 'lucide-react';
 
 import { EventList } from '@/components/event-list';
 import { LogoCoin } from '@/components/logo-coin';
+import { LatestPosts } from '@/components/post-feed';
 import { RegionResults } from '@/components/region-results';
 import { getChapterEventFeed } from '@/lib/calendar';
 import { achievements, chapter, programs, socialLinks } from '@/lib/chapter-content';
@@ -149,6 +150,8 @@ export default async function Home() {
           )}
         </div>
       </section>
+
+      <LatestPosts />
 
       <section className="tile-section" aria-labelledby="home-programs-title">
         <div className="site-container">

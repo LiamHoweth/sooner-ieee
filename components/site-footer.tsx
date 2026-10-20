@@ -8,6 +8,7 @@ import { sitePath } from '@/lib/site-path';
 const footerNav = [
   { href: '/events', label: 'Events' },
   { href: '/projects', label: 'Projects' },
+  { href: '/posts', label: 'Posts' },
   { href: '/about', label: 'About' },
   { href: '/sponsors', label: 'Sponsors' },
 ];

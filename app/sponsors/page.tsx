@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { ArrowUpRight, Mail } from 'lucide-react';
 
 import { PageHero } from '@/components/page-hero';
+import { SponsorApplicationForm } from '@/components/sponsor-application-form';
 import { achievements, chapter, sponsors } from '@/lib/chapter-content';
 import { photos } from '@/lib/photos';
 
@@ -43,7 +44,10 @@ export default function SponsorsPage() {
         summary="Reach motivated OU engineering students through technical programming, hands-on work, and opportunities with a clear purpose."
         photo={photos.campusAerial}
       >
-        <a className="button button-light" href={chapter.sponsorshipPacket} target="_blank" rel="noreferrer">
+        <a className="button button-light" href="#apply">
+          Apply to sponsor
+        </a>
+        <a className="button button-outline-light" href={chapter.sponsorshipPacket} target="_blank" rel="noreferrer">
           Sponsorship packet
           <ArrowUpRight aria-hidden="true" />
         </a>
@@ -129,6 +133,24 @@ export default function SponsorsPage() {
           </div>
         </section>
       )}
+
+      <section className="content-section apply-section" id="apply" aria-labelledby="apply-title">
+        <div className="site-container apply-layout">
+          <div className="apply-intro" data-reveal>
+            <h2 className="display-title" id="apply-title">
+              Apply to sponsor
+            </h2>
+            <p className="lead-copy">Tell us what you have in mind. It takes about two minutes.</p>
+            <p>
+              Applications go straight to the student officers, who reply by email. Prefer to talk first? Email{' '}
+              <a href={`mailto:${chapter.email}`}>{chapter.email}</a>.
+            </p>
+          </div>
+          <div data-reveal>
+            <SponsorApplicationForm />
+          </div>
+        </div>
+      </section>
 
       <section className="cta-band" aria-labelledby="contact-title">
         <div className="site-container cta-band-inner cta-band-split" data-reveal>

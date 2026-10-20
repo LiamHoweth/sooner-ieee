@@ -26,8 +26,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# local environment
+# local environment (templates are committed)
 .env*
+!.env.example
 
 # deployment and generated files
 .vercel

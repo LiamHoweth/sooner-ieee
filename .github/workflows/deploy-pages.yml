@@ -35,6 +35,10 @@ jobs:
 
       - name: Build static site
         run: npm run build
+        env:
+          # Address of the Railway API (server/). Set it under Settings → Secrets and
+          # variables → Actions → Variables → IEEE_API_URL. See docs/BACKEND.md.
+          NEXT_PUBLIC_API_URL: ${{ vars.IEEE_API_URL }}
 
       - name: Adapt internal links for project Pages
         run: |
@@ -42,14 +46,14 @@ jobs:
           const fs = require('node:fs');
           const path = require('node:path');
           const output = 'dist/client';
-          const pages = ['index.html', 'about.html', 'events.html', 'projects.html', 'sponsors.html', '404.html'];
+          const pages = ['index.html', 'about.html', 'events.html', 'projects.html', 'sponsors.html', 'posts.html', 'post.html', 'admin.html', '404.html'];
 
           for (const page of pages) {
             const file = path.join(output, page);
             if (!fs.existsSync(file)) continue;
             const html = fs.readFileSync(file, 'utf8')
               .replaceAll('href="/"', 'href="/sooner-ieee/"')
-              .replace(/href="\/(about|events|projects|sponsors)"/g, 'href="/sooner-ieee/$1.html"');
+              .replace(/href="\/(about|events|projects|sponsors|posts|post|admin)"/g, 'href="/sooner-ieee/$1.html"');
             fs.writeFileSync(file, html);
           }
           NODE
