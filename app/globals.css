@@ -602,10 +602,27 @@ figure:hover > .chapter-logo-spin,
   width: var(--coin-size);
   height: var(--coin-size);
   border-radius: 50%;
-  perspective: 1300px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  perspective: 2000px;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
   /* Opacity lives here, outside the 3D context, so the coin never flattens. */
   animation: coin-fade 700ms ease-out both;
+}
+
+.coin:focus-visible {
+  outline: 3px solid var(--white);
+  outline-offset: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coin {
+    cursor: default;
+  }
 }
 
 .coin-float,
@@ -630,7 +647,7 @@ figure:hover > .chapter-logo-spin,
    (X axis) along a gravity arc, leaning slightly off-axis like a real coin. */
 .coin-body {
   transform:
-    translateY(calc(var(--coin-lift, 0) * var(--coin-size) * -0.42))
+    translateY(calc(var(--coin-lift, 0) * var(--coin-rise, var(--coin-size) * 0.42) * -1))
     scale(calc(1 + var(--coin-lift, 0) * 0.06))
     rotateZ(var(--coin-wobble-z, 0deg))
     rotateY(var(--coin-wobble-y, 0deg))
@@ -901,8 +918,10 @@ figure:hover > .chapter-logo-spin,
 }
 
 .home-hero-coin {
-  --coin-size: min(24rem, 30vw, 46svh);
+  --coin-size: min(20rem, 26vw, 40svh);
   justify-self: center;
+  /* Sits a little low, leaving headroom for the toss under the hero's clipped top. */
+  translate: 0 1.75rem;
 }
 
 .next-up {
@@ -4537,6 +4556,368 @@ fieldset.post-filter {
   margin-top: 1rem;
 }
 
+/* Admin post editor: template chooser, simple mode, publishing, photos */
+.admin-chooser {
+  max-width: 60rem;
+}
+
+.admin-chooser h1:focus:not(:focus-visible),
+.admin-success h2:focus:not(:focus-visible),
+.admin-block:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.admin-chooser-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-chooser-option {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  width: 100%;
+  height: 100%;
+  min-height: 10rem;
+  padding: 1.5rem;
+  border: 2px solid transparent;
+  border-top: 6px solid var(--crimson);
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.admin-chooser-grid li:nth-child(2) .admin-chooser-option {
+  border-top-color: var(--ieee-blue);
+}
+
+.admin-chooser-grid li:nth-child(3) .admin-chooser-option {
+  border-top-color: var(--storm);
+}
+
+.admin-chooser-option:hover,
+.admin-chooser-option:focus-visible {
+  border-color: var(--crimson);
+  box-shadow: 0 18px 32px -24px rgb(0 0 0 / 55%);
+}
+
+.admin-chooser-option:focus-visible {
+  outline: 3px solid rgb(132 22 23 / 25%);
+  outline-offset: 2px;
+}
+
+.admin-chooser-option svg {
+  width: 2rem;
+  height: 2rem;
+  color: var(--crimson);
+}
+
+.admin-chooser-option strong {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.admin-chooser-option span {
+  color: var(--charcoal);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.admin-compose {
+  display: grid;
+  align-items: start;
+  gap: 1.5rem;
+}
+
+.admin-compose-edit {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  max-width: 50rem;
+}
+
+.admin-compose-preview {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.admin-preview-label {
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--charcoal);
+}
+
+.admin-preview-frame {
+  overflow: hidden;
+  background: var(--white);
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.admin-preview-card {
+  max-width: 24rem;
+}
+
+@media (min-width: 1360px) {
+  .admin-compose {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .admin-compose-preview {
+    position: sticky;
+    top: 10rem;
+    max-height: calc(100vh - 11rem);
+    overflow-y: auto;
+  }
+
+  .admin-editor-actions .admin-preview-toggle {
+    display: none;
+  }
+}
+
+@media (max-width: 1359.98px) {
+  .admin-compose[data-view='edit'] .admin-compose-preview,
+  .admin-compose[data-view='preview'] .admin-compose-edit {
+    display: none;
+  }
+}
+
+.admin-schedule {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 32rem;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid var(--crimson);
+  background: var(--white);
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+}
+
+.admin-schedule label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 700;
+}
+
+.admin-upload-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+
+/* Empty but still in the page, so screen readers hear it when it fills. */
+.admin-upload-status:empty {
+  position: absolute;
+}
+
+.admin-upload-status progress {
+  width: 12rem;
+  accent-color: var(--crimson);
+}
+
+.admin-upload-errors {
+  display: grid;
+  justify-items: start;
+  gap: 0.4rem;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid #b42318;
+  background: rgb(180 35 24 / 6%);
+}
+
+.admin-upload-errors ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.admin-block-problem {
+  border-left-color: #b42318;
+  box-shadow: inset 0 0 0 2px rgb(180 35 24 / 35%);
+}
+
+.admin-block:focus-visible {
+  outline: 3px solid rgb(132 22 23 / 25%);
+}
+
+.admin-add-block .admin-add-more {
+  border-style: dashed;
+  color: var(--charcoal);
+}
+
+.admin-hint {
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  color: var(--gray);
+}
+
+.admin-hint .admin-link-button {
+  display: inline;
+  padding: 0;
+}
+
+.admin-hint code {
+  padding: 0.05rem 0.3rem;
+  background: var(--fog);
+}
+
+.admin-field-label {
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.admin-cover-field,
+.admin-hide-after {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-cover-auto {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--fog);
+}
+
+.admin-cover-auto img {
+  width: 6rem;
+  height: 4rem;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.admin-cover-auto > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.admin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border: 2px solid var(--line);
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-chip:hover,
+.admin-chip[aria-pressed='true'] {
+  border-color: var(--crimson);
+  color: var(--crimson);
+}
+
+.admin-chip[aria-pressed='true'] {
+  background: rgb(132 22 23 / 8%);
+}
+
+.admin-more-options {
+  display: block;
+}
+
+.admin-more-options summary {
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-more-options[open] summary {
+  margin-bottom: 1rem;
+}
+
+.admin-success {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+  max-width: 46rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border-top: 6px solid var(--crimson);
+  background: var(--white);
+}
+
+.admin-success-mark {
+  width: 3rem;
+  height: 3rem;
+  color: var(--crimson);
+}
+
+.admin-success h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-heading);
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--crimson);
+}
+
+.admin-success .admin-invite-link {
+  width: 100%;
+}
+
+.admin-drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.75rem;
+  border: 4px dashed var(--crimson);
+  background: rgb(244 242 238 / 88%);
+  color: var(--crimson);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.admin-drop-overlay svg {
+  width: 3rem;
+  height: 3rem;
+}
+
+@media (max-width: 700px) {
+  .admin-chooser-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-chooser-option {
+    min-height: 0;
+  }
+
+  .admin-cover-auto {
+    flex-direction: column;
+    align-items: start;
+  }
+}
+
 /* ------------------------------------------------------------ scroll reveal */
 .reveal-ready .reveal-pending {
   opacity: 0;
@@ -4627,6 +5008,7 @@ fieldset.post-filter {
     grid-area: coin;
     align-self: center;
     margin-top: clamp(1rem, 3svh, 1.75rem);
+    translate: none;
   }
 
   .home-hero-photo {

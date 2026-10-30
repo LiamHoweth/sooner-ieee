@@ -66,7 +66,7 @@ export const blockSchema = z.discriminatedUnion('type', [
 
 export type Block = z.infer<typeof blockSchema>;
 
-const EXPIRES_BEFORE_PUBLISH = '"Hide after" must be later than the publish date.';
+const EXPIRES_BEFORE_PUBLISH = '"Hide after" must be later than when the post goes live. Pick a later date or clear it.';
 
 export const postInputSchema = z
   .object({

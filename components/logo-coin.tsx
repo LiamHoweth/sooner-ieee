@@ -24,6 +24,8 @@ const TOSS_DELAY_MS = 1500;
 const CROUCH_MS = 180;
 const AIR_MS = 1250;
 const SETTLE_MS = 900;
+// Clicks while it's in the air, or this soon after it lands, are ignored.
+const CLICK_COOLDOWN_MS = 1000;
 
 // Spin slows from full speed to this fraction by the catch, so it lands turning gently.
 const LANDING_SPEED = 0.15;
@@ -47,19 +49,22 @@ function spinProgress(u: number) {
 /**
  * The IEEE Sooners primary and secondary logos struck as one thick 3D challenge
  * coin: OU crimson on the front, IEEE blue on the back. It tosses once after it
- * appears, landing crimson side up, then floats. Under reduced motion it is a
- * still image.
+ * appears, landing crimson side up, then floats. A click or tap tosses it again.
+ * Under reduced motion it is a still image.
  */
 export function LogoCoin({
   className,
   size = 'hero',
   caption = true,
+  radar = true,
 }: {
   className?: string;
   size?: 'hero' | 'feature';
   caption?: boolean;
+  radar?: boolean;
 }) {
   const stage = useRef<HTMLElement>(null);
+  const tossRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const el = stage.current;
@@ -67,6 +72,8 @@ export function LogoCoin({
 
     let frame = 0;
     let timer: number | undefined;
+    // Earliest time another toss may start; covers the flight plus a cooldown.
+    let readyAt = 0;
 
     const paint = (angle: number, lift: number, wobbleY: number, wobbleZ: number) => {
       const radians = (angle * Math.PI) / 180;
@@ -80,14 +87,34 @@ export function LogoCoin({
       el.dataset.face = faceAt(angle);
     };
 
+    // Cap the toss height to the room above the coin inside its section (the home
+    // hero clips overflow), keeping a margin for the tilted edge and the swell.
+    const fitRise = () => {
+      const coin = el.querySelector<HTMLElement>('.coin');
+      const section = el.closest('section');
+      if (!coin || !section) return;
+      const size = coin.offsetHeight;
+      const gap = coin.getBoundingClientRect().top - section.getBoundingClientRect().top;
+      // Measured: at the top of the arc the float, swell and tilted edge reach about
+      // 0.2 coin sizes above the resting top, and each px of rise adds ~0.9 px more.
+      const room = (gap - size * 0.2 - 8) / 0.9;
+      el.style.setProperty('--coin-rise', `${Math.max(0, Math.min(size * 0.42, room)).toFixed(1)}px`);
+    };
+
     const toss = () => {
+      const now = performance.now();
+      if (now < readyAt) return;
+      readyAt = now + CROUCH_MS + AIR_MS + SETTLE_MS + CLICK_COOLDOWN_MS;
+      window.clearTimeout(timer);
+      observer.disconnect();
+      fitRise();
       // Whole turns only, so it always lands primary (crimson) side up.
       const turns = 3 + Math.floor(Math.random() * 2);
       const to = 360 * turns;
       const lean = Math.random() < 0.5 ? -1 : 1;
       const landingVelocity = (to / AIR_MS) * (LANDING_SPEED / (1 - (1 - LANDING_SPEED) / 2));
       const wobbleOmega = (2 * Math.PI) / WOBBLE_PERIOD_MS;
-      const start = performance.now();
+      const start = now;
 
       const step = (now: number) => {
         const t = now - start;
@@ -121,8 +148,10 @@ export function LogoCoin({
       { threshold: 0.6 },
     );
     observer.observe(el);
+    tossRef.current = toss;
 
     return () => {
+      tossRef.current = null;
       observer.disconnect();
       window.clearTimeout(timer);
       cancelAnimationFrame(frame);
@@ -131,13 +160,13 @@ export function LogoCoin({
 
   return (
     <figure ref={stage} className={cn('coin-stage', `coin-stage-${size}`, className)}>
-      <div className="coin-radar" aria-hidden="true" />
+      {radar && <div className="coin-radar" aria-hidden="true" />}
       <span className="sr-only">
         The IEEE Sooners challenge coin: the crimson primary mark on one side and the blue secondary mark on the other.
       </span>
-      <div className="coin" aria-hidden="true">
+      <button type="button" className="coin" aria-label="Flip the coin" onClick={() => tossRef.current?.()}>
         <span className="coin-float">
-          <span className="coin-enter">
+          <span className="coin-enter" aria-hidden="true">
             <span className="coin-body">
               {Array.from({ length: EDGE_STRIPS }, (_, index) => (
                 <span
@@ -155,7 +184,7 @@ export function LogoCoin({
             </span>
           </span>
         </span>
-      </div>
+      </button>
       <span className="coin-shadow" aria-hidden="true" />
       {caption && (
         <figcaption className="coin-caption" aria-hidden="true">

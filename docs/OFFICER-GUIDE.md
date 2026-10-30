@@ -15,50 +15,63 @@ The admin area lives at **/admin.html** on the website. It doesn't appear in the
 
 ## Writing a news post
 
-Posts appear on the site's **News** page.
+Posts appear on the site's **News** page. A quick one ("GBM Thursday, free pizza") takes about a minute.
 
-1. Go to **News posts → New post**.
-2. Add a **title** and a one-line **summary**. The summary shows on the News page and the home page.
-3. Build the post from **blocks**. Add them at the bottom, and reorder them with the arrows.
+1. Go to **News posts → New post** and pick what you're posting:
+   **Event announcement**, **Event recap**, **Opportunity** or **General update**. Each one sets the
+   category and colour and gives you the blocks to fill in. The grey text in each box is only a hint.
+   **Start from a blank post** gives you a single text box.
+2. Add a **title** and fill in the blocks. Anything you leave empty is skipped when you save.
+3. That's it. The rest is optional:
+   - **Summary:** leave it blank and the first sentence of your text is used.
+   - **Cover photo:** leave it and your first photo is used.
+   - **Category** is already set. The colour follows it unless you choose another under **More options**.
+4. On a wide screen the **preview** sits next to the editor and updates as you type, showing the post
+   page and its card on the News page. On a phone or small laptop, tap **Preview**.
+5. Click one of:
+   - **Publish now:** live straight away. You then get **View on site** and **Copy link**. Paste the
+     link in Discord so members see it.
+   - **Schedule…:** pick a date and time, then **Schedule post**. It appears by itself at that time.
+   - **Save draft:** private. Only officers can see it.
 
-   | Block | Use it for |
-   |---|---|
-   | Text | Paragraphs. `**bold**`, `*italic*`, `[link text](https://…)`, lines starting with `- ` for bullets |
-   | Heading | Breaking a long post into sections |
-   | Image | One photo: text width, wide, or full screen |
-   | Gallery | Several photos as a grid or a swipeable carousel |
-   | Quote | A line from a speaker or member |
-   | Button | A sign-up form, RSVP or application link |
-   | Callout | A highlighted box: deadlines, "bring your laptop" |
-   | Video | A YouTube or Vimeo link |
-   | Stats | Big numbers: "40 new members", "3 podiums" |
-   | Event | Date, time, location and RSVP link for a single event |
-   | Two columns | Side-by-side text |
-   | Divider | A visual break |
+The **add** row at the bottom has Text, Photo(s), Link button, Event details and Video.
+**More blocks** adds Heading, Quote, Callout, Stats, Two columns and Divider.
 
-4. In **Settings**, choose a category, an accent colour (OU crimson, IEEE blue or storm), and a
-   cover image.
-5. Click **Preview** to see exactly what visitors will see.
-6. Click **Publish**. The post is live straight away. **Save draft** keeps it private.
+| Block | Use it for |
+|---|---|
+| Text | Paragraphs. `**bold**`, `*italic*`, `[link text](https://…)`, lines starting with `- ` for bullets. Links pasted from Google Docs or Discord are kept; other formatting is dropped |
+| Photo / Photo gallery | One photo (text width, wide or full screen), or several as a grid or swipeable carousel |
+| Link button | A sign-up form, RSVP or application link |
+| Event details | Date, time, location and RSVP link for one event |
+| Video | A YouTube or Vimeo link |
+| Heading, Quote, Callout, Stats, Two columns, Divider | Longer posts: sections, a speaker's words, a highlighted box, big numbers, side-by-side text, a break |
 
-More options:
+If a block is half filled in (for example a button with no link), saving stops and the block is
+marked in red with what's missing.
 
-- **Schedule:** set a future **Publish date**, then click Publish. The post appears at that time.
-- **Hide after:** for deadlines and one-day events. After that time the post leaves the News and
-  home pages on its own, and shows as **Expired** in the admin list. Its link still works for anyone
-  who already has it. Clear the field to bring it back.
-- **Pin:** pinned posts stay at the top of the News page.
-- **Unpublish:** open the post and click **Unpublish**. It goes back to being a draft.
-- **Edit later:** published posts keep their original date when you update them.
+**Hide after:** for deadlines and one-day events. After that time the post leaves the News and home
+pages on its own, and shows as **Expired** in the admin list. Its link still works for anyone who
+already has it. Posts with an event block get a one-click **The day after the event**. **Don't hide
+it** clears it.
+
+**More options:** accent colour, web address, publish date (for back-dating) and **Pin** (pinned
+posts stay at the top of the News page). Formatting tips are there too.
+
+- **Unpublish:** open a live post and click **Unpublish**. It goes back to being a draft.
+- **Edit later:** live posts show **Update post**, and keep their original date when you update them.
 
 ## Photos
 
-- Upload straight from your phone or laptop. Large photos are resized automatically.
-- Always fill in **Describe the image** (for example, "Officers at the fall involvement fair").
-  Screen readers read it aloud.
+- Drag photos from your computer anywhere onto the editor, or click **Photo(s)** in the add row to
+  pick them (this works with the keyboard and on phones). One photo becomes a Photo block; several
+  become a gallery. If the post already has an empty photo or gallery block, they fill that first.
+- **Reuse photos from the library** picks ones already uploaded, so you don't upload the same logo twice.
+- JPEG, PNG, WebP or GIF, up to 8 MB. Large photos are shrunk automatically before upload (GIFs are
+  not). You'll see progress while they upload, and a plain message if one is too big or the wrong kind.
+- Fill in **Describe the photo for someone who can't see it** (for example, "Officers at the fall
+  involvement fair"). Screen readers read it aloud.
 - Only post photos of people who are okay being online. Never post student IDs, emails or
   anything personal.
-- Images are reused from the library, so you don't need to upload the same logo twice.
 
 ## Inbox
 

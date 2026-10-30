@@ -515,7 +515,7 @@ describe('post expiry', () => {
     const edit = await call('PATCH', `/api/admin/posts/${created.data.post.id}`, { title: 'Stored date', status: 'published', expiresAt: at(-2 * hour) }, ownerToken);
     assert.equal(edit.status, 400);
     assert.equal(edit.data.field, 'expiresAt');
-    assert.equal(edit.data.error, '"Hide after" must be later than the publish date.');
+    assert.equal(edit.data.error, '"Hide after" must be later than when the post goes live. Pick a later date or clear it.');
     const fresh = await call('POST', '/api/admin/posts', { title: 'Already over', status: 'published', expiresAt: at(-hour) }, ownerToken);
     assert.equal(fresh.status, 400);
     assert.equal(fresh.data.field, 'expiresAt');

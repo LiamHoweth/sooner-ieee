@@ -1,21 +1,29 @@
 'use client';
 
-import { ArrowDown, ArrowLeft, ArrowUp, Copy, Eye, ImagePlus, PenLine, Plus, Save, Send, Trash2, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { ArrowDown, ArrowLeft, ArrowUp, CalendarClock, Copy, Eye, ImagePlus, PenLine, Plus, Save, Send, Trash2, Upload, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { PostArticle } from '@/components/post-content';
-import { postHref } from '@/components/post-feed';
+import { PostCard } from '@/components/post-feed';
 import { api, ApiError } from '@/lib/api';
-import { type Accent, type Block, BLOCK_LABELS, type BlockType, CATEGORIES, emptyBlock, type Post } from '@/lib/posts';
+import { addPhotos, autoSummary, dayAfter, firstPhoto, isAutoCover, lastEventDate, prepareBlocks } from '@/lib/post-draft';
+import { accentForCategory, getTemplate, type TemplateId, templateForCategory } from '@/lib/post-templates';
+import { type Accent, type Block, type BlockType, CATEGORIES, emptyBlock, type Post } from '@/lib/posts';
+import { UPLOAD_ACCEPT } from '@/lib/upload-limits';
 
-import { ImagePicker } from './image-picker';
+import { ALT_LABEL, BlockFields, EDITOR_LABELS } from './block-fields';
+import { ImagePicker, uploadImage } from './image-picker';
+import { PublishSuccess } from './publish-success';
+import { TemplateChooser } from './template-chooser';
 
 type Draft = {
   title: string;
   slug: string;
+  /** Blank means "use the first sentence", filled in when saving. */
   summary: string;
   category: string;
   accent: Accent;
+  /** null means "use the first photo", filled in when saving. */
   cover: { id: string; url: string; alt: string } | null;
   blocks: Block[];
   pinned: boolean;
@@ -38,7 +46,12 @@ const EMPTY: Draft = {
   expiresAt: null,
 };
 
-const ADDABLE: BlockType[] = ['text', 'heading', 'image', 'gallery', 'quote', 'button', 'callout', 'video', 'stats', 'event', 'columns', 'divider'];
+/** Simple mode shows these; "Photo(s)" is handled separately because it uploads straight away. */
+const BASIC_BLOCKS: BlockType[] = ['text', 'button', 'event', 'video'];
+const MORE_BLOCKS: BlockType[] = ['heading', 'quote', 'callout', 'stats', 'columns', 'divider'];
+const MAX_PHOTOS = 24;
+
+const ACCENT_NAMES: Record<Accent, string> = { crimson: 'OU crimson', blue: 'IEEE blue', storm: 'Storm' };
 
 function toLocalInput(iso: string | null) {
   if (!iso) return '';
@@ -47,14 +60,21 @@ function toLocalInput(iso: string | null) {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
+function fromLocalInput(value: string) {
+  return value ? new Date(value).toISOString() : null;
+}
+
+const shortDay = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+/** Saved posts come back with the automatic summary and cover filled in; show those as automatic again. */
 function fromPost(post: Post): Draft {
   return {
     title: post.title,
     slug: post.slug,
-    summary: post.summary,
+    summary: post.summary && post.summary === autoSummary(post.blocks) ? '' : post.summary,
     category: post.category,
     accent: post.accent,
-    cover: post.cover,
+    cover: isAutoCover(post.cover, post.blocks) ? null : post.cover,
     blocks: post.blocks,
     pinned: post.pinned,
     status: post.status,
@@ -63,17 +83,36 @@ function fromPost(post: Post): Draft {
   };
 }
 
+const isFuture = (iso: string | null) => iso !== null && Date.parse(iso) > Date.now();
+const hasFiles = (event: React.DragEvent) => Array.from(event.dataTransfer.types).includes('Files');
+
 export function PostEditor({ postId, onBack }: { postId: number | null; onBack: () => void }) {
   const [id, setId] = useState<number | null>(postId);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [saved, setSaved] = useState<string>(JSON.stringify(EMPTY));
   const [loading, setLoading] = useState(postId !== null);
+  const [chosen, setChosen] = useState(postId !== null);
+  const [kind, setKind] = useState<TemplateId | null>(null);
+  const [accentAuto, setAccentAuto] = useState(true);
+  const [moreBlocks, setMoreBlocks] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'error' | 'info'; text: string } | null>(null);
-  const [preview, setPreview] = useState(false);
+  const [checkBlocks, setCheckBlocks] = useState(false);
+  const [view, setView] = useState<'edit' | 'preview'>('edit');
+  const [scheduling, setScheduling] = useState(false);
+  const [scheduleAt, setScheduleAt] = useState('');
+  const [success, setSuccess] = useState(false);
   const [picker, setPicker] = useState<{ multiple: boolean; apply: (images: { id: string; url: string }[]) => void } | null>(null);
+  const [uploading, setUploading] = useState<{ done: number; total: number; name: string } | null>(null);
+  const [uploadResult, setUploadResult] = useState<{ added: number; errors: string[] } | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const titleInput = useRef<HTMLInputElement>(null);
+  const scheduleInput = useRef<HTMLInputElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const dirty = JSON.stringify(draft) !== saved;
+  const template = getTemplate(kind);
 
   useEffect(() => {
     if (postId === null) return;
@@ -82,6 +121,10 @@ export function PostEditor({ postId, onBack }: { postId: number | null; onBack: 
         const next = fromPost(post);
         setDraft(next);
         setSaved(JSON.stringify(next));
+        setKind(templateForCategory(post.category)?.id ?? null);
+        setAccentAuto(post.accent === accentForCategory(post.category));
+        // Posts that already use advanced blocks open with all blocks available.
+        setMoreBlocks(post.blocks.some((block) => MORE_BLOCKS.includes(block.type)));
       })
       .catch(() => setNotice({ tone: 'error', text: 'Could not load this post.' }))
       .finally(() => setLoading(false));
@@ -95,7 +138,26 @@ export function PostEditor({ postId, onBack }: { postId: number | null; onBack: 
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
 
+  useEffect(() => {
+    if (scheduling) scheduleInput.current?.focus();
+  }, [scheduling]);
+
+  // A photo dropped just outside the editor would otherwise open in the tab and lose the draft.
+  useEffect(() => {
+    const guard = (event: DragEvent) => {
+      if (event.dataTransfer?.types.includes('Files')) event.preventDefault();
+    };
+    window.addEventListener('dragover', guard);
+    window.addEventListener('drop', guard);
+    return () => {
+      window.removeEventListener('dragover', guard);
+      window.removeEventListener('drop', guard);
+    };
+  }, []);
+
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((current) => ({ ...current, [key]: value }));
+  const setCategory = (category: string) =>
+    setDraft((current) => ({ ...current, category, accent: accentAuto ? accentForCategory(category) : current.accent }));
   const setBlock = (index: number, block: Block) =>
     setDraft((current) => ({ ...current, blocks: current.blocks.map((item, i) => (i === index ? block : item)) }));
   const moveBlock = (index: number, delta: number) =>
@@ -113,45 +175,130 @@ export function PostEditor({ postId, onBack }: { postId: number | null; onBack: 
       blocks: [...current.blocks.slice(0, index + 1), structuredClone(current.blocks[index]), ...current.blocks.slice(index + 1)],
     }));
   const addBlock = (type: BlockType) => setDraft((current) => ({ ...current, blocks: [...current.blocks, emptyBlock(type)] }));
+  const insertPhotos = (images: { id: string; url: string }[]) => setDraft((current) => ({ ...current, blocks: addPhotos(current.blocks, images) }));
 
-  async function save(status: 'draft' | 'published') {
-    setBusy(true);
+  function choose(templateId: TemplateId | null) {
+    const picked = getTemplate(templateId);
+    const next: Draft = picked
+      ? { ...EMPTY, category: picked.category, accent: accentForCategory(picked.category), blocks: picked.blocks() }
+      : { ...EMPTY, blocks: [emptyBlock('text')] };
+    setDraft(next);
+    setSaved(JSON.stringify(next));
+    setKind(templateId);
+    setAccentAuto(true);
+    setChosen(true);
+    requestAnimationFrame(() => titleInput.current?.focus());
+  }
+
+  // ---------------------------------------------------------------- photos
+  async function uploadFiles(files: File[]) {
+    if (files.length === 0 || uploading) return;
+    const errors: string[] = [];
+    if (files.length > MAX_PHOTOS) errors.push(`Only the first ${MAX_PHOTOS} photos were added. A gallery holds up to ${MAX_PHOTOS}.`);
+    const batch = files.slice(0, MAX_PHOTOS);
+    const added: { id: string; url: string }[] = [];
+    setUploadResult(null);
+    for (const [index, file] of batch.entries()) {
+      setUploading({ done: index, total: batch.length, name: file.name });
+      try {
+        added.push(await uploadImage(file));
+      } catch (error) {
+        errors.push(error instanceof ApiError ? error.message : `“${file.name}” could not be uploaded. Try again.`);
+      }
+    }
+    setUploading(null);
+    if (added.length) insertPhotos(added);
+    setUploadResult({ added: added.length, errors });
+  }
+
+  function onDrop(event: React.DragEvent<HTMLDivElement>) {
+    if (!hasFiles(event)) return;
+    event.preventDefault();
+    setDragging(false);
+    if (!success) void uploadFiles(Array.from(event.dataTransfer.files));
+  }
+
+  // ---------------------------------------------------------------- saving
+  async function save(status: 'draft' | 'published', publishedAt: string | null = draft.publishedAt) {
+    const snapshot = draft;
     setNotice(null);
-    const body = {
-      title: draft.title,
-      slug: draft.slug || undefined,
-      summary: draft.summary,
-      category: draft.category || 'News',
-      accent: draft.accent,
-      coverUploadId: draft.cover?.id ?? null,
-      coverAlt: draft.cover?.alt ?? '',
-      // Skip empty image slots and galleries so a half-finished block never blocks saving.
-      blocks: draft.blocks.filter((block) => !(block.type === 'image' && !block.uploadId) && !(block.type === 'gallery' && block.images.length === 0)),
-      pinned: draft.pinned,
-      status,
-      publishedAt: draft.publishedAt,
-      expiresAt: draft.expiresAt,
-    };
+    if (!snapshot.title.trim()) {
+      setNotice({ tone: 'error', text: 'Add a title first.' });
+      titleInput.current?.focus();
+      return false;
+    }
+    const { blocks, problems } = prepareBlocks(snapshot.blocks);
+    if (problems.length) {
+      setCheckBlocks(true);
+      setNotice({
+        tone: 'error',
+        text: problems.length === 1 ? 'One block needs fixing before this can be saved. It is marked below.' : `${problems.length} blocks need fixing before this can be saved. They are marked below.`,
+      });
+      setView('edit');
+      requestAnimationFrame(() => document.getElementById(`post-block-${problems[0].index}`)?.focus());
+      return false;
+    }
+    const cover = snapshot.cover ?? firstPhoto(blocks);
+    setBusy(true);
     try {
       const { post } = await api<{ post: Post }>(id ? `/api/admin/posts/${id}` : '/api/admin/posts', {
         method: id ? 'PATCH' : 'POST',
-        body,
         auth: true,
+        body: {
+          title: snapshot.title,
+          slug: snapshot.slug || undefined,
+          summary: snapshot.summary.trim() || autoSummary(blocks),
+          category: snapshot.category.trim() || 'News',
+          accent: snapshot.accent,
+          coverUploadId: cover?.id ?? null,
+          coverAlt: cover?.alt ?? '',
+          blocks,
+          pinned: snapshot.pinned,
+          status,
+          publishedAt,
+          expiresAt: snapshot.expiresAt,
+        },
       });
-      const next = fromPost(post);
+      // Keep the editor's own blocks (including blank template blocks) and automatic fields;
+      // take what the server decided: id, web address, status and dates.
+      const meta = { slug: post.slug, status: post.status, publishedAt: post.publishedAt, expiresAt: post.expiresAt };
       setId(post.id);
-      setDraft(next);
-      setSaved(JSON.stringify(next));
-      const scheduled = status === 'published' && post.publishedAt && Date.parse(post.publishedAt) > Date.now();
-      setNotice({
-        tone: 'info',
-        text: status === 'draft' ? 'Draft saved. Only admins can see it.' : scheduled ? 'Scheduled. It goes live at the publish time.' : 'Published. It is live on the site now.',
-      });
+      setDraft((current) => ({ ...current, ...meta }));
+      setSaved(JSON.stringify({ ...snapshot, ...meta }));
+      setCheckBlocks(false);
+      if (status === 'published') setSuccess(true);
+      else setNotice({ tone: 'info', text: snapshot.status === 'published' ? 'Unpublished. It is a draft again, so only officers can see it.' : 'Draft saved. Only officers can see it.' });
+      return true;
     } catch (error) {
-      setNotice({ tone: 'error', text: error instanceof ApiError ? error.message : 'Could not save.' });
+      setNotice({ tone: 'error', text: error instanceof ApiError ? error.message : 'Could not save. Check your connection and try again.' });
+      return false;
     } finally {
       setBusy(false);
     }
+  }
+
+  function publishNow() {
+    // A future publish date would schedule it; "now" means now. Past dates (already published) are kept.
+    void save('published', isFuture(draft.publishedAt) ? new Date().toISOString() : draft.publishedAt);
+  }
+
+  function openSchedule() {
+    if (scheduling) {
+      setScheduling(false);
+      return;
+    }
+    setScheduleAt(isFuture(draft.publishedAt) ? toLocalInput(draft.publishedAt) : '');
+    setScheduling(true);
+  }
+
+  async function confirmSchedule() {
+    const when = fromLocalInput(scheduleAt);
+    if (!when || Date.parse(when) <= Date.now() + 60_000) {
+      setNotice({ tone: 'error', text: 'Pick a date and time in the future to schedule it.' });
+      scheduleInput.current?.focus();
+      return;
+    }
+    if (await save('published', when)) setScheduling(false);
   }
 
   async function remove() {
@@ -166,65 +313,177 @@ export function PostEditor({ postId, onBack }: { postId: number | null; onBack: 
     }
   }
 
-  const previewPost = useMemo(
-    () => ({ ...draft, author: null, publishedAt: draft.publishedAt ?? new Date().toISOString() }),
-    [draft],
+  // --------------------------------------------------------------- preview
+  const prepared = useMemo(() => prepareBlocks(draft.blocks), [draft.blocks]);
+  const summaryHint = useMemo(() => autoSummary(draft.blocks), [draft.blocks]);
+  const autoCover = useMemo(() => firstPhoto(draft.blocks), [draft.blocks]);
+  const problemAt = useMemo(
+    () => new Map(checkBlocks ? prepared.problems.map((problem) => [problem.index, problem.message]) : []),
+    [checkBlocks, prepared.problems],
+  );
+  const previewPost: Post = useMemo(
+    () => ({
+      id: id ?? 0,
+      slug: draft.slug || 'preview',
+      title: draft.title,
+      summary: draft.summary.trim() || summaryHint,
+      category: draft.category || 'News',
+      accent: draft.accent,
+      cover: draft.cover ?? autoCover,
+      blocks: prepared.blocks,
+      status: draft.status,
+      pinned: draft.pinned,
+      author: null,
+      publishedAt: draft.publishedAt ?? new Date().toISOString(),
+      expiresAt: draft.expiresAt,
+      createdAt: '',
+      updatedAt: '',
+    }),
+    [id, draft, summaryHint, autoCover, prepared.blocks],
   );
 
   if (loading) return <p className="admin-muted">Loading post…</p>;
+  if (!chosen) return <TemplateChooser onChoose={choose} onBack={onBack} />;
+
+  const scheduled = draft.status === 'published' && isFuture(draft.publishedAt);
+  const live = draft.status === 'published' && !scheduled;
+  const eventDate = lastEventDate(draft.blocks);
+  const hideAfterEvent = eventDate ? dayAfter(eventDate) : null;
+  const leave = () => {
+    if (!dirty || window.confirm('Leave without saving your changes?')) onBack();
+  };
 
   return (
-    <div className="admin-editor">
+    <div
+      className="admin-editor"
+      onDragEnter={(event) => {
+        if (!hasFiles(event) || success) return;
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragOver={(event) => {
+        if (!hasFiles(event)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = success ? 'none' : 'copy';
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
+      }}
+      onDrop={onDrop}
+    >
       <div className="admin-editor-bar">
-        <button
-          type="button"
-          className="admin-link-button"
-          onClick={() => {
-            if (!dirty || window.confirm('Leave without saving your changes?')) onBack();
-          }}
-        >
+        <button type="button" className="admin-link-button" onClick={leave}>
           <ArrowLeft aria-hidden="true" />
           All news posts
         </button>
-        <span className={dirty ? 'admin-pill admin-pill-warn' : 'admin-pill'}>
-          {dirty ? 'Unsaved changes' : draft.status === 'published' ? 'Published' : 'Draft'}
+        <span className={dirty ? 'admin-pill admin-pill-warn' : live ? 'admin-pill admin-pill-live' : 'admin-pill'}>
+          {dirty ? 'Unsaved changes' : scheduled ? 'Scheduled' : live ? 'Live' : 'Draft'}
         </span>
-        <div className="admin-editor-actions">
-          <button type="button" className="button button-outline" onClick={() => setPreview(!preview)}>
-            {preview ? <PenLine aria-hidden="true" /> : <Eye aria-hidden="true" />}
-            {preview ? 'Edit' : 'Preview'}
-          </button>
-          <button type="button" className="button button-outline" disabled={busy} onClick={() => save('draft')}>
-            <Save aria-hidden="true" />
-            {draft.status === 'published' ? 'Unpublish' : 'Save draft'}
-          </button>
-          <button type="button" className="button button-crimson" disabled={busy || !draft.title.trim()} onClick={() => save('published')}>
-            <Send aria-hidden="true" />
-            {draft.status === 'published' ? 'Update' : 'Publish'}
-          </button>
-        </div>
+        {!success && (
+          <div className="admin-editor-actions">
+            <button type="button" className="button button-outline admin-preview-toggle" aria-pressed={view === 'preview'} onClick={() => setView(view === 'edit' ? 'preview' : 'edit')}>
+              {view === 'preview' ? <PenLine aria-hidden="true" /> : <Eye aria-hidden="true" />}
+              {view === 'preview' ? 'Back to editing' : 'Preview'}
+            </button>
+            <button type="button" className="button button-outline" disabled={busy} onClick={() => save('draft')}>
+              <Save aria-hidden="true" />
+              {live ? 'Unpublish' : 'Save draft'}
+            </button>
+            {!live && (
+              <button type="button" className="button button-outline" disabled={busy} aria-expanded={scheduling} aria-controls="admin-schedule" onClick={openSchedule}>
+                <CalendarClock aria-hidden="true" />
+                {scheduled ? 'Reschedule…' : 'Schedule…'}
+              </button>
+            )}
+            <button type="button" className="button button-crimson" disabled={busy} onClick={publishNow}>
+              <Send aria-hidden="true" />
+              {live ? 'Update post' : 'Publish now'}
+            </button>
+          </div>
+        )}
       </div>
-      {notice && (
-        <output className={notice.tone === 'error' ? 'admin-error' : 'admin-info'}>
-          {notice.text}{' '}
-          {notice.tone === 'info' && draft.status === 'published' && draft.slug && (
-            <a href={postHref(draft.slug)} target="_blank" rel="noreferrer">
-              View it
-            </a>
-          )}
-        </output>
+
+      {scheduling && !success && (
+        <div id="admin-schedule" className="admin-schedule">
+          <p>
+            <strong>Schedule this post.</strong> It stays hidden until this time, then appears on the site by itself.
+          </p>
+          <label>
+            <span>Publish on</span>
+            <input
+              ref={scheduleInput}
+              type="datetime-local"
+              value={scheduleAt}
+              min={toLocalInput(new Date().toISOString())}
+              onChange={(event) => setScheduleAt(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') setScheduling(false);
+                if (event.key === 'Enter') void confirmSchedule();
+              }}
+            />
+          </label>
+          <div className="admin-row-actions">
+            <button type="button" className="button button-crimson" disabled={busy} onClick={confirmSchedule}>
+              <CalendarClock aria-hidden="true" />
+              Schedule post
+            </button>
+            <button type="button" className="admin-link-button" onClick={() => setScheduling(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
 
-      {preview ? (
-        <div className="admin-preview">
-          <PostArticle post={previewPost} />
+      {notice && <output className={notice.tone === 'error' ? 'admin-error' : 'admin-info'}>{notice.text}</output>}
+
+      <output className="admin-upload-status">
+        {uploading && (
+          <>
+            <span>
+              Uploading {uploading.total > 1 ? `photo ${uploading.done + 1} of ${uploading.total}` : 'photo'}: {uploading.name}
+            </span>
+            <progress max={uploading.total} value={uploading.done} />
+          </>
+        )}
+        {uploadResult && uploadResult.added > 0 && (
+          <span>
+            Added {uploadResult.added} {uploadResult.added === 1 ? 'photo' : 'photos'}. Describe {uploadResult.added === 1 ? 'it' : 'each one'} for someone who can’t see it.
+          </span>
+        )}
+      </output>
+      {uploadResult && uploadResult.errors.length > 0 && (
+        <div className="admin-upload-errors">
+          <ul>
+            {uploadResult.errors.map((error) => (
+              <li key={error} className="admin-error">
+                {error}
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="admin-link-button" onClick={() => setUploadResult({ ...uploadResult, errors: [] })}>
+            Dismiss
+          </button>
         </div>
+      )}
+
+      {success ? (
+        <PublishSuccess
+          title={draft.title}
+          slug={draft.slug}
+          publishedAt={draft.publishedAt}
+          onKeepEditing={() => {
+            setSuccess(false);
+            requestAnimationFrame(() => titleInput.current?.focus());
+          }}
+          onBack={onBack}
+        />
       ) : (
-        <div className="admin-editor-grid">
-          <div className="admin-editor-main">
+        <div className="admin-compose" data-view={view}>
+          <div className="admin-compose-edit">
             <input
+              ref={titleInput}
               className="admin-title-input"
-              placeholder="Post title"
+              placeholder={template?.titleHint ?? 'Post title'}
               value={draft.title}
               maxLength={160}
               onChange={(event) => set('title', event.target.value)}
@@ -232,93 +491,146 @@ export function PostEditor({ postId, onBack }: { postId: number | null; onBack: 
             />
             <textarea
               className="admin-summary-input"
-              placeholder="One or two sentences shown on the News page"
+              placeholder={summaryHint ? `Summary (optional). Leave blank to use: “${summaryHint}”` : 'Summary (optional). Leave blank to use your first sentence.'}
               value={draft.summary}
               maxLength={400}
               rows={2}
               onChange={(event) => set('summary', event.target.value)}
-              aria-label="Summary"
+              aria-label="Summary for the News page (optional)"
             />
 
-            <ol className="admin-blocks">
-              {draft.blocks.map((block, index) => (
-                <li key={index} className="admin-block">
-                  <div className="admin-block-head">
-                    <span>{BLOCK_LABELS[block.type]}</span>
-                    <div>
-                      <button type="button" className="admin-icon-button" onClick={() => moveBlock(index, -1)} disabled={index === 0} aria-label="Move up">
-                        <ArrowUp aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className="admin-icon-button"
-                        onClick={() => moveBlock(index, 1)}
-                        disabled={index === draft.blocks.length - 1}
-                        aria-label="Move down"
-                      >
-                        <ArrowDown aria-hidden="true" />
-                      </button>
-                      <button type="button" className="admin-icon-button" onClick={() => duplicateBlock(index)} aria-label="Duplicate">
-                        <Copy aria-hidden="true" />
-                      </button>
-                      <button type="button" className="admin-icon-button" onClick={() => removeBlock(index)} aria-label="Remove block">
-                        <Trash2 aria-hidden="true" />
-                      </button>
+            <ol className="admin-blocks" aria-label="Post content">
+              {draft.blocks.map((block, index) => {
+                const problem = problemAt.get(index);
+                return (
+                  <li
+                    key={index}
+                    id={`post-block-${index}`}
+                    tabIndex={-1}
+                    className={problem ? 'admin-block admin-block-problem' : 'admin-block'}
+                    aria-label={`Block ${index + 1}: ${EDITOR_LABELS[block.type]}`}
+                  >
+                    <div className="admin-block-head">
+                      <span>{EDITOR_LABELS[block.type]}</span>
+                      <div>
+                        <button type="button" className="admin-icon-button" onClick={() => moveBlock(index, -1)} disabled={index === 0} aria-label="Move up">
+                          <ArrowUp aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-icon-button"
+                          onClick={() => moveBlock(index, 1)}
+                          disabled={index === draft.blocks.length - 1}
+                          aria-label="Move down"
+                        >
+                          <ArrowDown aria-hidden="true" />
+                        </button>
+                        <button type="button" className="admin-icon-button" onClick={() => duplicateBlock(index)} aria-label="Duplicate">
+                          <Copy aria-hidden="true" />
+                        </button>
+                        <button type="button" className="admin-icon-button" onClick={() => removeBlock(index)} aria-label="Remove block">
+                          <Trash2 aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <BlockFields
-                    block={block}
-                    onChange={(next) => setBlock(index, next)}
-                    pickImages={(multiple, apply) => setPicker({ multiple, apply })}
-                  />
-                </li>
-              ))}
+                    {problem && <p className="admin-error">{problem}</p>}
+                    <BlockFields
+                      block={block}
+                      hints={template?.hints[block.type]}
+                      onChange={(next) => setBlock(index, next)}
+                      pickImages={(multiple, apply) => setPicker({ multiple, apply })}
+                    />
+                  </li>
+                );
+              })}
             </ol>
 
             <div className="admin-add-block">
-              <p>Add a block</p>
+              <p>Add to the post</p>
               <div>
-                {ADDABLE.map((type) => (
+                <button type="button" onClick={() => addBlock('text')}>
+                  <Plus aria-hidden="true" />
+                  {EDITOR_LABELS.text}
+                </button>
+                <button type="button" onClick={() => fileInput.current?.click()} disabled={uploading !== null}>
+                  <Upload aria-hidden="true" />
+                  Photo(s)
+                </button>
+                {BASIC_BLOCKS.filter((type) => type !== 'text').map((type) => (
                   <button key={type} type="button" onClick={() => addBlock(type)}>
                     <Plus aria-hidden="true" />
-                    {BLOCK_LABELS[type]}
+                    {EDITOR_LABELS[type]}
                   </button>
                 ))}
-              </div>
-            </div>
-          </div>
-
-          <aside className="admin-editor-side">
-            <section>
-              <h2>Cover image</h2>
-              {draft.cover ? (
-                <div className="admin-cover">
-                  <img src={draft.cover.url} alt="" />
-                  <label>
-                    <span>Describe the image</span>
-                    <input value={draft.cover.alt} maxLength={300} onChange={(event) => set('cover', { ...draft.cover!, alt: event.target.value })} />
-                  </label>
-                  <button type="button" className="admin-link-button" onClick={() => set('cover', null)}>
-                    <X aria-hidden="true" />
-                    Remove cover
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="admin-pick"
-                  onClick={() => setPicker({ multiple: false, apply: ([image]) => set('cover', { id: image.id, url: image.url, alt: '' }) })}
-                >
-                  <ImagePlus aria-hidden="true" />
-                  Choose a cover
+                <button type="button" className="admin-add-more" aria-expanded={moreBlocks} aria-controls="admin-more-blocks" onClick={() => setMoreBlocks(!moreBlocks)}>
+                  {moreBlocks ? 'Fewer blocks' : 'More blocks'}
                 </button>
+              </div>
+              {moreBlocks && (
+                <div id="admin-more-blocks">
+                  {MORE_BLOCKS.map((type) => (
+                    <button key={type} type="button" onClick={() => addBlock(type)}>
+                      <Plus aria-hidden="true" />
+                      {EDITOR_LABELS[type]}
+                    </button>
+                  ))}
+                </div>
               )}
-            </section>
-            <section className="admin-form">
-              <h2>Settings</h2>
+              <p className="admin-hint">
+                Tip: drag photos from your computer anywhere onto this page. One photo becomes a Photo, several become a gallery.{' '}
+                <button type="button" className="admin-link-button" onClick={() => setPicker({ multiple: true, apply: insertPhotos })}>
+                  Reuse photos from the library
+                </button>
+              </p>
+              <input
+                ref={fileInput}
+                type="file"
+                accept={UPLOAD_ACCEPT}
+                multiple
+                hidden
+                onChange={(event) => {
+                  void uploadFiles(Array.from(event.target.files ?? []));
+                  event.target.value = '';
+                }}
+              />
+            </div>
+
+            <section className="admin-card admin-form admin-post-details" aria-labelledby="admin-details-title">
+              <h2 id="admin-details-title">Post details</h2>
+              <div className="admin-cover-field">
+                <p className="admin-field-label">Cover photo (optional)</p>
+                {draft.cover ? (
+                  <div className="admin-cover">
+                    <img src={draft.cover.url} alt="" />
+                    <label>
+                      <span>{ALT_LABEL}</span>
+                      <input value={draft.cover.alt} maxLength={300} onChange={(event) => set('cover', { ...draft.cover!, alt: event.target.value })} />
+                    </label>
+                    <button type="button" className="admin-link-button" onClick={() => set('cover', null)}>
+                      <X aria-hidden="true" />
+                      Remove cover (use the first photo instead)
+                    </button>
+                  </div>
+                ) : (
+                  <div className="admin-cover-auto">
+                    {autoCover?.url && <img src={autoCover.url} alt="" />}
+                    <div>
+                      <small>{autoCover ? 'Using your first photo. Pick another if you like.' : "Uses your first photo if you don't pick one."}</small>
+                      <button
+                        type="button"
+                        className="admin-link-button"
+                        onClick={() => setPicker({ multiple: false, apply: ([image]) => set('cover', { id: image.id, url: image.url, alt: '' }) })}
+                      >
+                        <ImagePlus aria-hidden="true" />
+                        Choose a cover
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <label>
                 <span>Category</span>
-                <input list="post-categories" value={draft.category} maxLength={40} onChange={(event) => set('category', event.target.value)} />
+                <input list="post-categories" value={draft.category} maxLength={40} onChange={(event) => setCategory(event.target.value)} />
                 <datalist id="post-categories">
                   {CATEGORIES.map((category) => (
                     <option key={category} value={category}>
@@ -327,62 +639,121 @@ export function PostEditor({ postId, onBack }: { postId: number | null; onBack: 
                   ))}
                 </datalist>
               </label>
-              <fieldset className="admin-accent">
-                <legend>Accent colour</legend>
-                {(['crimson', 'blue', 'storm'] as Accent[]).map((accent) => (
-                  <label key={accent} className={`admin-accent-${accent}`}>
-                    <input type="radio" name="accent" checked={draft.accent === accent} onChange={() => set('accent', accent)} />
-                    <span>{accent === 'crimson' ? 'OU crimson' : accent === 'blue' ? 'IEEE blue' : 'Storm'}</span>
-                  </label>
-                ))}
-              </fieldset>
-              <label>
-                <span>Web address</span>
-                <input
-                  value={draft.slug}
-                  placeholder="made from the title"
-                  maxLength={80}
-                  onChange={(event) => set('slug', event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
-                />
-              </label>
-              <label>
-                <span>Publish date (leave blank for now)</span>
-                <input
-                  type="datetime-local"
-                  value={toLocalInput(draft.publishedAt)}
-                  onChange={(event) => set('publishedAt', event.target.value ? new Date(event.target.value).toISOString() : null)}
-                />
-              </label>
-              <label>
-                <span>Hide after (optional)</span>
-                <input
-                  type="datetime-local"
-                  value={toLocalInput(draft.expiresAt)}
-                  min={toLocalInput(draft.publishedAt)}
-                  onChange={(event) => set('expiresAt', event.target.value ? new Date(event.target.value).toISOString() : null)}
-                />
-                <small>For deadlines and one-day events. Afterwards it leaves the News and home pages, but its link still works.</small>
-              </label>
-              <label className="admin-check">
-                <input type="checkbox" checked={draft.pinned} onChange={(event) => set('pinned', event.target.checked)} />
-                <span>Pin to the top of the News page</span>
-              </label>
+              <div className="admin-hide-after">
+                <label>
+                  <span>Hide after (optional)</span>
+                  <input
+                    type="datetime-local"
+                    value={toLocalInput(draft.expiresAt)}
+                    min={toLocalInput(draft.publishedAt)}
+                    onChange={(event) => set('expiresAt', fromLocalInput(event.target.value))}
+                  />
+                  <small>{template?.hideAfterHint ?? 'For deadlines and one-day events.'} Afterwards it leaves the News and home pages, but its link still works.</small>
+                </label>
+                <div className="admin-row-actions">
+                  {hideAfterEvent && (
+                    <button
+                      type="button"
+                      className="admin-chip"
+                      aria-pressed={draft.expiresAt !== null && Date.parse(draft.expiresAt) === hideAfterEvent.getTime()}
+                      onClick={() => set('expiresAt', hideAfterEvent.toISOString())}
+                    >
+                      The day after the event ({shortDay.format(hideAfterEvent)})
+                    </button>
+                  )}
+                  {draft.expiresAt && (
+                    <button type="button" className="admin-link-button" onClick={() => set('expiresAt', null)}>
+                      Don’t hide it
+                    </button>
+                  )}
+                </div>
+              </div>
             </section>
+
+            <details className="admin-card admin-more-options">
+              <summary>More options</summary>
+              <div className="admin-form">
+                <fieldset className="admin-accent">
+                  <legend>Accent colour</legend>
+                  <label className={`admin-accent-${accentForCategory(draft.category)}`}>
+                    <input
+                      type="radio"
+                      name="accent"
+                      checked={accentAuto}
+                      onChange={() => {
+                        setAccentAuto(true);
+                        set('accent', accentForCategory(draft.category));
+                      }}
+                    />
+                    <span>Match the category ({ACCENT_NAMES[accentForCategory(draft.category)]})</span>
+                  </label>
+                  {(['crimson', 'blue', 'storm'] as Accent[]).map((accent) => (
+                    <label key={accent} className={`admin-accent-${accent}`}>
+                      <input
+                        type="radio"
+                        name="accent"
+                        checked={!accentAuto && draft.accent === accent}
+                        onChange={() => {
+                          setAccentAuto(false);
+                          set('accent', accent);
+                        }}
+                      />
+                      <span>{ACCENT_NAMES[accent]}</span>
+                    </label>
+                  ))}
+                </fieldset>
+                <label>
+                  <span>Web address</span>
+                  <input
+                    value={draft.slug}
+                    placeholder="made from the title"
+                    maxLength={80}
+                    onChange={(event) => set('slug', event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                  />
+                </label>
+                <label>
+                  <span>Publish date and time</span>
+                  <input type="datetime-local" value={toLocalInput(draft.publishedAt)} onChange={(event) => set('publishedAt', fromLocalInput(event.target.value))} />
+                  <small>Leave blank to use the moment you publish. Use Schedule… to post later.</small>
+                </label>
+                <label className="admin-check">
+                  <input type="checkbox" checked={draft.pinned} onChange={(event) => set('pinned', event.target.checked)} />
+                  <span>Pin to the top of the News page</span>
+                </label>
+                <p className="admin-hint">
+                  Text formatting: <code>**bold**</code> · <code>*italic*</code> · <code>[link](https://…)</code> · start lines with <code>- </code> for bullets.
+                  Links pasted from Google Docs or Discord are kept.
+                </p>
+              </div>
+            </details>
+
             {id && (
               <button type="button" className="admin-danger" onClick={remove} disabled={busy}>
                 <Trash2 aria-hidden="true" />
                 Delete post
               </button>
             )}
-            <section className="admin-help">
-              <h2>Formatting text</h2>
-              <p>
-                <code>**bold**</code> · <code>*italic*</code> · <code>[link](https://…)</code>
-                <br />
-                Start lines with <code>- </code> for bullets or <code>1. </code> for numbers. Leave a blank line between paragraphs.
-              </p>
-            </section>
+          </div>
+
+          <aside className="admin-compose-preview" aria-labelledby="admin-preview-title">
+            <p id="admin-preview-title" className="admin-preview-label">
+              Preview: the post page
+            </p>
+            <div className="admin-preview-frame">
+              <PostArticle post={previewPost} />
+            </div>
+            <p className="admin-preview-label">On the News page</p>
+            <div className="admin-preview-card" inert>
+              <PostCard post={previewPost} />
+            </div>
           </aside>
+        </div>
+      )}
+
+      {dragging && (
+        <div className="admin-drop-overlay" aria-hidden="true">
+          <Upload />
+          <span>Drop photos to add them to the post</span>
         </div>
       )}
 
@@ -397,272 +768,4 @@ export function PostEditor({ postId, onBack }: { postId: number | null; onBack: 
       />
     </div>
   );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label>
-      <span>{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function BlockFields({
-  block,
-  onChange,
-  pickImages,
-}: {
-  block: Block;
-  onChange: (block: Block) => void;
-  pickImages: (multiple: boolean, apply: (images: { id: string; url: string }[]) => void) => void;
-}) {
-  switch (block.type) {
-    case 'heading':
-      return (
-        <div className="admin-form admin-row">
-          <Field label="Heading">
-            <input value={block.text} maxLength={160} onChange={(event) => onChange({ ...block, text: event.target.value })} />
-          </Field>
-          <Field label="Size">
-            <select value={block.level} onChange={(event) => onChange({ ...block, level: Number(event.target.value) as 2 | 3 })}>
-              <option value={2}>Large</option>
-              <option value={3}>Small</option>
-            </select>
-          </Field>
-        </div>
-      );
-    case 'text':
-      return (
-        <textarea
-          className="admin-textarea"
-          rows={6}
-          value={block.text}
-          placeholder="Write here. **bold**, *italic*, [link](https://…), - bullets"
-          onChange={(event) => onChange({ ...block, text: event.target.value })}
-          aria-label="Text"
-        />
-      );
-    case 'image':
-      return (
-        <div className="admin-form">
-          {block.url ? (
-            <img className="admin-thumb" src={block.url} alt="" />
-          ) : (
-            <button
-              type="button"
-              className="admin-pick"
-              onClick={() => pickImages(false, ([image]) => onChange({ ...block, uploadId: image.id, url: image.url }))}
-            >
-              <ImagePlus aria-hidden="true" />
-              Choose an image
-            </button>
-          )}
-          <div className="admin-row">
-            <Field label="Describe the image (for screen readers)">
-              <input value={block.alt} maxLength={300} onChange={(event) => onChange({ ...block, alt: event.target.value })} />
-            </Field>
-            <Field label="Width">
-              <select value={block.width} onChange={(event) => onChange({ ...block, width: event.target.value as 'inline' | 'wide' | 'full' })}>
-                <option value="inline">Text width</option>
-                <option value="wide">Wide</option>
-                <option value="full">Full screen</option>
-              </select>
-            </Field>
-          </div>
-          <Field label="Caption (optional)">
-            <input value={block.caption} maxLength={300} onChange={(event) => onChange({ ...block, caption: event.target.value })} />
-          </Field>
-          {block.url && (
-            <button
-              type="button"
-              className="admin-link-button"
-              onClick={() => pickImages(false, ([image]) => onChange({ ...block, uploadId: image.id, url: image.url }))}
-            >
-              Replace image
-            </button>
-          )}
-        </div>
-      );
-    case 'gallery':
-      return (
-        <div className="admin-form">
-          <div className="admin-gallery">
-            {block.images.map((image, index) => (
-              <div key={`${image.uploadId}-${index}`} className="admin-gallery-item">
-                <img src={image.url} alt="" />
-                <input
-                  placeholder="Describe it"
-                  value={image.alt}
-                  maxLength={300}
-                  onChange={(event) =>
-                    onChange({ ...block, images: block.images.map((item, i) => (i === index ? { ...item, alt: event.target.value } : item)) })
-                  }
-                  aria-label={`Description for image ${index + 1}`}
-                />
-                <button
-                  type="button"
-                  className="admin-icon-button"
-                  aria-label="Remove image"
-                  onClick={() => onChange({ ...block, images: block.images.filter((_, i) => i !== index) })}
-                >
-                  <X aria-hidden="true" />
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className="admin-row">
-            <button
-              type="button"
-              className="admin-pick"
-              onClick={() =>
-                pickImages(true, (images) =>
-                  onChange({ ...block, images: [...block.images, ...images.map((image) => ({ uploadId: image.id, url: image.url, alt: '' }))].slice(0, 24) }),
-                )
-              }
-            >
-              <ImagePlus aria-hidden="true" />
-              Add images
-            </button>
-            <Field label="Layout">
-              <select value={block.layout} onChange={(event) => onChange({ ...block, layout: event.target.value as 'grid' | 'carousel' })}>
-                <option value="grid">Grid</option>
-                <option value="carousel">Swipe carousel</option>
-              </select>
-            </Field>
-          </div>
-        </div>
-      );
-    case 'quote':
-      return (
-        <div className="admin-form">
-          <Field label="Quote">
-            <textarea rows={3} value={block.text} maxLength={1200} onChange={(event) => onChange({ ...block, text: event.target.value })} />
-          </Field>
-          <Field label="Who said it (optional)">
-            <input value={block.attribution} maxLength={160} onChange={(event) => onChange({ ...block, attribution: event.target.value })} />
-          </Field>
-        </div>
-      );
-    case 'button':
-      return (
-        <div className="admin-form admin-row">
-          <Field label="Button text">
-            <input value={block.label} maxLength={80} onChange={(event) => onChange({ ...block, label: event.target.value })} />
-          </Field>
-          <Field label="Link (https://…)">
-            <input value={block.url} maxLength={2000} onChange={(event) => onChange({ ...block, url: event.target.value })} />
-          </Field>
-          <Field label="Style">
-            <select value={block.style} onChange={(event) => onChange({ ...block, style: event.target.value as 'crimson' | 'outline' })}>
-              <option value="crimson">Solid</option>
-              <option value="outline">Outline</option>
-            </select>
-          </Field>
-        </div>
-      );
-    case 'callout':
-      return (
-        <div className="admin-form">
-          <div className="admin-row">
-            <Field label="Title (optional)">
-              <input value={block.title} maxLength={160} onChange={(event) => onChange({ ...block, title: event.target.value })} />
-            </Field>
-            <Field label="Colour">
-              <select value={block.tone} onChange={(event) => onChange({ ...block, tone: event.target.value as typeof block.tone })}>
-                <option value="crimson">Crimson</option>
-                <option value="blue">IEEE blue</option>
-                <option value="storm">Storm</option>
-                <option value="cream">Cream</option>
-              </select>
-            </Field>
-          </div>
-          <Field label="Text">
-            <textarea rows={3} value={block.text} maxLength={4000} onChange={(event) => onChange({ ...block, text: event.target.value })} />
-          </Field>
-        </div>
-      );
-    case 'video':
-      return (
-        <div className="admin-form admin-row">
-          <Field label="YouTube or Vimeo link">
-            <input value={block.url} maxLength={2000} placeholder="https://www.youtube.com/watch?v=…" onChange={(event) => onChange({ ...block, url: event.target.value })} />
-          </Field>
-          <Field label="Caption (optional)">
-            <input value={block.caption} maxLength={300} onChange={(event) => onChange({ ...block, caption: event.target.value })} />
-          </Field>
-        </div>
-      );
-    case 'stats':
-      return (
-        <div className="admin-form">
-          {block.items.map((item, index) => (
-            <div key={index} className="admin-row">
-              <Field label="Number">
-                <input
-                  value={item.value}
-                  maxLength={24}
-                  placeholder="50+"
-                  onChange={(event) => onChange({ ...block, items: block.items.map((it, i) => (i === index ? { ...it, value: event.target.value } : it)) })}
-                />
-              </Field>
-              <Field label="Label">
-                <input
-                  value={item.label}
-                  maxLength={80}
-                  placeholder="members"
-                  onChange={(event) => onChange({ ...block, items: block.items.map((it, i) => (i === index ? { ...it, label: event.target.value } : it)) })}
-                />
-              </Field>
-              <button
-                type="button"
-                className="admin-icon-button"
-                aria-label="Remove stat"
-                disabled={block.items.length === 1}
-                onClick={() => onChange({ ...block, items: block.items.filter((_, i) => i !== index) })}
-              >
-                <X aria-hidden="true" />
-              </button>
-            </div>
-          ))}
-          {block.items.length < 6 && (
-            <button type="button" className="admin-link-button" onClick={() => onChange({ ...block, items: [...block.items, { value: '', label: '' }] })}>
-              <Plus aria-hidden="true" />
-              Add a stat
-            </button>
-          )}
-        </div>
-      );
-    case 'event':
-      return (
-        <div className="admin-form">
-          <Field label="Event name">
-            <input value={block.title} maxLength={160} onChange={(event) => onChange({ ...block, title: event.target.value })} />
-          </Field>
-          <div className="admin-row">
-            <Field label="Date">
-              <input type="date" value={block.date} onChange={(event) => onChange({ ...block, date: event.target.value })} />
-            </Field>
-            <Field label="Time (optional)">
-              <input value={block.time} maxLength={40} placeholder="7:00 PM" onChange={(event) => onChange({ ...block, time: event.target.value })} />
-            </Field>
-            <Field label="Location (optional)">
-              <input value={block.location} maxLength={160} placeholder="Devon Energy Hall 120" onChange={(event) => onChange({ ...block, location: event.target.value })} />
-            </Field>
-          </div>
-          <Field label="RSVP or details link (optional)">
-            <input value={block.url} maxLength={2000} placeholder="https://" onChange={(event) => onChange({ ...block, url: event.target.value })} />
-          </Field>
-        </div>
-      );
-    case 'columns':
-      return (
-        <div className="admin-row admin-columns">
-          <textarea className="admin-textarea" rows={5} value={block.left} placeholder="Left column" onChange={(event) => onChange({ ...block, left: event.target.value })} aria-label="Left column" />
-          <textarea className="admin-textarea" rows={5} value={block.right} placeholder="Right column" onChange={(event) => onChange({ ...block, right: event.target.value })} aria-label="Right column" />
-        </div>
-      );
-    case 'divider':
-      return <hr className="admin-divider" />;
-  }
 }

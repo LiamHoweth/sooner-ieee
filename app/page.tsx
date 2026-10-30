@@ -77,7 +77,7 @@ export default async function Home() {
               </a>
             </div>
           </div>
-          <LogoCoin className="home-hero-coin" caption={false} />
+          <LogoCoin className="home-hero-coin" caption={false} radar={false} />
         </div>
 
         <div className="next-up">

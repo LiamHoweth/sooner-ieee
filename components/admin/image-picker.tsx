@@ -4,6 +4,7 @@ import { ImagePlus, Upload, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { api, ApiError } from '@/lib/api';
+import { fileProblem, UPLOAD_ACCEPT, uploadProblem } from '@/lib/upload-limits';
 
 import type { UploadItem } from './types';
 
@@ -29,14 +30,25 @@ async function prepareImage(file: File) {
   }
 }
 
+/** Resizes and uploads one photo. Throws an ApiError with a message an officer can act on. */
 export async function uploadImage(file: File) {
+  const early = fileProblem(file);
+  if (early) throw new ApiError(early, 0);
   const { blob, width, height } = await prepareImage(file);
+  const late = uploadProblem(file.name, blob);
+  if (late) throw new ApiError(late, 0);
   const form = new FormData();
   const name = file.name.replace(/\.[^.]+$/, '') + (blob.type === 'image/webp' ? '.webp' : '');
   form.append('file', new File([blob], name || 'image', { type: blob.type }));
   if (width) form.append('width', String(width));
   if (height) form.append('height', String(height));
-  return api<{ id: string; url: string }>('/api/admin/uploads', { method: 'POST', body: form, auth: true });
+  try {
+    return await api<{ id: string; url: string }>('/api/admin/uploads', { method: 'POST', body: form, auth: true });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 413) throw new ApiError(`“${file.name}” is too big. Photos must be 8 MB or smaller.`, 413);
+    if (error instanceof ApiError && error.status === 400) throw new ApiError(`“${file.name}”: ${error.message}`, 400);
+    throw error;
+  }
 }
 
 export function ImagePicker({
@@ -111,8 +123,8 @@ export function ImagePicker({
       <label className="admin-dropzone">
         <Upload aria-hidden="true" />
         <span>{busy ? 'Uploading…' : 'Upload from your computer or phone'}</span>
-        <small>JPEG, PNG, WebP or GIF. Large photos are resized automatically.</small>
-        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple={multiple} disabled={busy} onChange={(event) => onFiles(event.target.files)} />
+        <small>JPEG, PNG, WebP or GIF, up to 8 MB. Large photos are resized automatically.</small>
+        <input type="file" accept={UPLOAD_ACCEPT} multiple={multiple} disabled={busy} onChange={(event) => onFiles(event.target.files)} />
       </label>
       {error && <p className="admin-error">{error}</p>}
       <p className="admin-dialog-sub">Or reuse one from the library</p>
