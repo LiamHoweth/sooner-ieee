@@ -120,20 +120,23 @@ export async function login(db: Db, loginName: string, password: string, remembe
     return null;
   }
   if (!(await verifyPassword(password, admin.password_hash))) return null;
+  audit(db, admin.id, 'login');
+  return startSession(db, admin.id, remember, userAgent);
+}
 
+/** Creates a session and returns the shape the sign-in form expects: { token, expiresAt, admin }. */
+export function startSession(db: Db, adminId: number, remember: boolean, userAgent: string) {
   const token = newToken();
   const expires = new Date(Date.now() + (remember ? REMEMBER_DAYS * 24 : SESSION_HOURS) * 3600 * 1000);
   db.prepare('INSERT INTO sessions (token_hash, admin_id, created_at, expires_at, user_agent) VALUES (?, ?, ?, ?, ?)').run(
     sha256(token),
-    admin.id,
+    adminId,
     now(),
     expires.toISOString(),
     userAgent.slice(0, 200),
   );
-  db.prepare('UPDATE admins SET last_login_at = ? WHERE id = ?').run(now(), admin.id);
-  audit(db, admin.id, 'login');
-  const { password_hash: _hash, ...safe } = admin;
-  return { token, expiresAt: expires.toISOString(), admin: safe as Admin };
+  db.prepare('UPDATE admins SET last_login_at = ? WHERE id = ?').run(now(), adminId);
+  return { token, expiresAt: expires.toISOString(), admin: getAdmin(db, adminId)! };
 }
 
 export function adminForToken(db: Db, token: string) {
@@ -160,6 +163,8 @@ export function pruneExpired(db: Db) {
   const stamp = now();
   db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(stamp);
   db.prepare('DELETE FROM password_resets WHERE expires_at < ? OR used_at IS NOT NULL').run(stamp);
+  // Keep finished invites for a month so the activity log still makes sense, then drop them.
+  db.prepare('DELETE FROM admin_invites WHERE expires_at < ?').run(new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString());
   db.prepare('DELETE FROM throttles WHERE window_start < ?').run(Math.floor(Date.now() / 1000) - 86400);
 }
 

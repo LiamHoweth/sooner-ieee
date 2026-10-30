@@ -1,16 +1,18 @@
-import altBlack from '@/assets/brand/coin/alt-black-256.webp';
-import altBlue from '@/assets/brand/coin/alt-blue-256.webp';
-import altCrimson from '@/assets/brand/coin/alt-crimson-256.webp';
-import altRedOutline from '@/assets/brand/coin/alt-red-outline-256.webp';
-import altRed from '@/assets/brand/coin/alt-red-256.webp';
-import primary320 from '@/assets/brand/coin/primary-320.webp';
-import primary96 from '@/assets/brand/coin/primary-96.webp';
-import secondary320 from '@/assets/brand/coin/secondary-320.webp';
-import secondary96 from '@/assets/brand/coin/secondary-96.webp';
+import altBlack from '@/assets/brand/marks/alt-black-256.webp';
+import altBlue from '@/assets/brand/marks/alt-blue-256.webp';
+import altCrimson from '@/assets/brand/marks/alt-crimson-256.webp';
+import altRedOutline from '@/assets/brand/marks/alt-red-outline-256.webp';
+import altRed from '@/assets/brand/marks/alt-red-256.webp';
+import primary320 from '@/assets/brand/marks/primary-320.webp';
+import primary96 from '@/assets/brand/marks/primary-96.webp';
+import secondary320 from '@/assets/brand/marks/secondary-320.webp';
+import secondary96 from '@/assets/brand/marks/secondary-96.webp';
 import { cn } from '@/lib/utils';
 
-// Circular cut-outs of the approved logos (see scripts/cut-logos.mjs). The original
-// Instagram screenshots in assets/brand/ remain the source of truth.
+// Flat marks rendered from the official vector logos in assets/brand/svg/
+// (see scripts/cut-coin.mjs). Primary is the OU crimson mark with a thin white
+// keyline outside the disc, so it stays visible on the crimson header, page heroes,
+// mobile menu and news cards; secondary is the IEEE blue mark.
 const marks = {
   primary: { small: primary96, large: primary320 },
   secondary: { small: secondary96, large: secondary320 },

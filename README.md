@@ -1,7 +1,7 @@
 # IEEE Sooners website
 
-The website of the IEEE Student Branch at the University of Oklahoma: events, projects, posts,
-sponsorship, and an officer-only admin area.
+The website of the IEEE Student Branch at the University of Oklahoma: news, events, projects,
+sponsorship, a contact form, and an officer-only admin area.
 
 **Future webmaster: start with [docs/HANDOFF.md](docs/HANDOFF.md).**
 

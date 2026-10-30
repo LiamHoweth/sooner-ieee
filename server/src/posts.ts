@@ -66,25 +66,34 @@ export const blockSchema = z.discriminatedUnion('type', [
 
 export type Block = z.infer<typeof blockSchema>;
 
-export const postInputSchema = z.object({
-  title: text(160).min(1, 'Add a title'),
-  slug: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .max(80)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers and dashes')
-    .optional(),
-  summary: text(400).default(''),
-  category: text(40).min(1).default('News'),
-  accent: z.enum(['crimson', 'blue', 'storm']).default('crimson'),
-  coverUploadId: uploadId.nullable().default(null),
-  coverAlt: text(300).default(''),
-  blocks: z.array(blockSchema).max(200).default([]),
-  status: z.enum(['draft', 'published']).default('draft'),
-  pinned: z.boolean().default(false),
-  publishedAt: z.string().datetime().nullable().optional(),
-});
+const EXPIRES_BEFORE_PUBLISH = '"Hide after" must be later than the publish date.';
+
+export const postInputSchema = z
+  .object({
+    title: text(160).min(1, 'Add a title'),
+    slug: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .max(80)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers and dashes')
+      .optional(),
+    summary: text(400).default(''),
+    category: text(40).min(1).default('News'),
+    accent: z.enum(['crimson', 'blue', 'storm']).default('crimson'),
+    coverUploadId: uploadId.nullable().default(null),
+    coverAlt: text(300).default(''),
+    blocks: z.array(blockSchema).max(200).default([]),
+    status: z.enum(['draft', 'published']).default('draft'),
+    pinned: z.boolean().default(false),
+    publishedAt: z.string().datetime().nullable().optional(),
+    // "Hide after": the post leaves the public list at this time, but its own link keeps working.
+    expiresAt: z.string().datetime().nullable().optional(),
+  })
+  .refine((input) => !input.expiresAt || !input.publishedAt || Date.parse(input.expiresAt) > Date.parse(input.publishedAt), {
+    message: EXPIRES_BEFORE_PUBLISH,
+    path: ['expiresAt'],
+  });
 
 export type PostInput = z.infer<typeof postInputSchema>;
 
@@ -103,6 +112,7 @@ type PostRow = {
   author_id: number | null;
   author_name: string | null;
   published_at: string | null;
+  expires_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -143,6 +153,7 @@ export function serializePost(row: PostRow, uploadUrl: (id: string) => string) {
     pinned: Boolean(row.pinned),
     author: row.author_name,
     publishedAt: row.published_at,
+    expiresAt: row.expires_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -160,15 +171,17 @@ const SELECT_POST = `SELECT p.*, a.display_name AS author_name FROM posts p LEFT
 
 export function listPublished(db: Db, limit: number, offset: number, category?: string) {
   const filter = category ? 'AND p.category = ?' : '';
-  const args: (string | number)[] = category ? [now(), category, limit, offset] : [now(), limit, offset];
+  const stamp = now();
+  const args: (string | number)[] = category ? [stamp, stamp, category, limit, offset] : [stamp, stamp, limit, offset];
   return db
     .prepare(
-      `${SELECT_POST} WHERE p.status = 'published' AND p.published_at <= ? ${filter}
+      `${SELECT_POST} WHERE p.status = 'published' AND p.published_at <= ? AND (p.expires_at IS NULL OR p.expires_at > ?) ${filter}
        ORDER BY p.pinned DESC, p.published_at DESC LIMIT ? OFFSET ?`,
     )
     .all(...args) as PostRow[];
 }
 
+/** One live post by slug. Expired posts are still returned so shared links keep working. */
 export function getPublished(db: Db, slug: string) {
   return db
     .prepare(`${SELECT_POST} WHERE p.slug = ? AND p.status = 'published' AND p.published_at <= ?`)
@@ -203,6 +216,13 @@ export function savePost(db: Db, input: PostInput, authorId: number, id?: number
     input.status === 'published'
       ? input.publishedAt ?? existing?.published_at ?? stamp
       : input.publishedAt ?? existing?.published_at ?? null;
+  // null clears "hide after"; leaving it out keeps what was saved. Normalized so SQL string comparison works.
+  const expiresAt =
+    input.expiresAt === undefined ? existing?.expires_at ?? null : input.expiresAt === null ? null : new Date(input.expiresAt).toISOString();
+  // The schema only checks this when publishedAt is sent; check again against the date actually stored.
+  if (expiresAt && publishedAt && Date.parse(expiresAt) <= Date.parse(publishedAt)) {
+    return { error: EXPIRES_BEFORE_PUBLISH, field: 'expiresAt' };
+  }
   const values = [
     slug,
     input.title,
@@ -215,20 +235,21 @@ export function savePost(db: Db, input: PostInput, authorId: number, id?: number
     input.status,
     input.pinned ? 1 : 0,
     publishedAt,
+    expiresAt,
     stamp,
   ];
 
   if (existing) {
     db.prepare(
       `UPDATE posts SET slug = ?, title = ?, summary = ?, category = ?, accent = ?, cover_upload_id = ?, cover_alt = ?,
-       blocks = ?, status = ?, pinned = ?, published_at = ?, updated_at = ? WHERE id = ?`,
+       blocks = ?, status = ?, pinned = ?, published_at = ?, expires_at = ?, updated_at = ? WHERE id = ?`,
     ).run(...values, existing.id);
     return existing.id;
   }
   const result = db
     .prepare(
       `INSERT INTO posts (slug, title, summary, category, accent, cover_upload_id, cover_alt, blocks, status, pinned,
-       published_at, updated_at, author_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       published_at, expires_at, updated_at, author_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(...values, authorId, stamp);
   return Number(result.lastInsertRowid);

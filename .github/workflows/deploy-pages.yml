@@ -46,14 +46,15 @@ jobs:
           const fs = require('node:fs');
           const path = require('node:path');
           const output = 'dist/client';
-          const pages = ['index.html', 'about.html', 'events.html', 'projects.html', 'sponsors.html', 'posts.html', 'post.html', 'admin.html', '404.html'];
+          const pages = ['index.html', 'about.html', 'events.html', 'projects.html', 'sponsors.html', 'news.html', 'contact.html', 'posts.html', 'post.html', 'admin.html', '404.html'];
 
           for (const page of pages) {
             const file = path.join(output, page);
             if (!fs.existsSync(file)) continue;
+            // `.html` goes before any ?query or #hash: /about#mission -> /sooner-ieee/about.html#mission.
             const html = fs.readFileSync(file, 'utf8')
-              .replaceAll('href="/"', 'href="/sooner-ieee/"')
-              .replace(/href="\/(about|events|projects|sponsors|posts|post|admin)"/g, 'href="/sooner-ieee/$1.html"');
+              .replace(/href="\/([?#][^"]*)?"/g, 'href="/sooner-ieee/$1"')
+              .replace(/href="\/(about|events|projects|sponsors|news|contact|posts|post|admin)([?#][^"]*)?"/g, 'href="/sooner-ieee/$1.html$2"');
             fs.writeFileSync(file, html);
           }
           NODE

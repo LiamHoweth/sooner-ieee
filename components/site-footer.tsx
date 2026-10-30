@@ -1,4 +1,4 @@
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
 
 import { ChapterLogo } from '@/components/chapter-logo';
 import { chapter, socialLinks } from '@/lib/chapter-content';
@@ -6,11 +6,12 @@ import { photoList } from '@/lib/photos';
 import { sitePath } from '@/lib/site-path';
 
 const footerNav = [
+  { href: '/news', label: 'News' },
   { href: '/events', label: 'Events' },
   { href: '/projects', label: 'Projects' },
-  { href: '/posts', label: 'Posts' },
   { href: '/about', label: 'About' },
   { href: '/sponsors', label: 'Sponsors' },
+  { href: '/contact', label: 'Contact' },
 ];
 
 export function SiteFooter() {
@@ -51,6 +52,10 @@ export function SiteFooter() {
           <a className="footer-email" href={`mailto:${chapter.email}`}>
             {chapter.email}
           </a>
+          <a className="footer-email footer-message" href={sitePath('/contact#message')}>
+            Send a message
+            <ArrowRight aria-hidden="true" />
+          </a>
           <p>
             {chapter.advisor.role}: {chapter.advisor.name}
             <br />
@@ -84,6 +89,9 @@ export function SiteFooter() {
         <div className="site-container footer-bottom-inner">
           <span>© {new Date().getFullYear()} IEEE Sooners</span>
           <span>Student-led at the University of Oklahoma</span>
+          <a className="footer-signin" href={sitePath('/admin')}>
+            Officer sign-in
+          </a>
         </div>
       </div>
     </footer>

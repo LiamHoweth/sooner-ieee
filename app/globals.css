@@ -385,7 +385,7 @@ svg {
 .desktop-nav {
   display: flex;
   align-items: center;
-  gap: clamp(1.1rem, 2vw, 2rem);
+  gap: clamp(0.85rem, 1.3vw, 1.75rem);
   font-family: var(--font-ui);
   font-size: var(--fs-small);
   font-weight: 700;
@@ -393,12 +393,12 @@ svg {
   text-transform: uppercase;
 }
 
-.desktop-nav > a:not(.nav-join) {
+.desktop-nav .nav-link {
   position: relative;
   padding-block: 0.75rem;
 }
 
-.desktop-nav > a:not(.nav-join)::after {
+.desktop-nav .nav-link::after {
   position: absolute;
   right: 0;
   bottom: 0.3rem;
@@ -411,8 +411,9 @@ svg {
   transition: transform 220ms var(--ease-out);
 }
 
-.desktop-nav > a:hover::after,
-.desktop-nav > a[aria-current='page']::after {
+.desktop-nav .nav-link:hover::after,
+.desktop-nav .nav-item[data-open] > .nav-link::after,
+.desktop-nav .nav-link[aria-current]::after {
   transform: scaleX(1);
   transform-origin: left;
 }
@@ -494,7 +495,7 @@ svg {
   margin-top: 2rem;
 }
 
-.mobile-nav-sheet nav a {
+.mobile-nav-list > li > a {
   display: flex;
   min-height: 3.75rem;
   align-items: center;
@@ -505,7 +506,7 @@ svg {
   text-transform: uppercase;
 }
 
-.mobile-nav-sheet nav a[aria-current='page'] {
+.mobile-nav-list > li > a[aria-current] {
   color: var(--cream);
   text-decoration: underline;
   text-decoration-thickness: 3px;
@@ -543,9 +544,9 @@ figure:hover > .chapter-logo-spin,
 /* -------------------------------------------------------------- logo coin */
 .coin-stage {
   --coin-size: min(30rem, 78vw);
-  --coin-thickness: calc(var(--coin-size) * 0.07);
-  --ring: rgb(0 98 155 / 55%);
-  --sweep: rgb(64 160 230 / 34%);
+  --coin-thickness: calc(var(--coin-size) * 0.11);
+  --ring: rgb(214 56 59 / 55%);
+  --sweep: rgb(232 80 80 / 32%);
   position: relative;
   display: grid;
   grid-template-areas: 'coin' 'caption';
@@ -559,8 +560,8 @@ figure:hover > .chapter-logo-spin,
 }
 
 .coin-stage[data-face='back'] {
-  --ring: rgb(214 56 59 / 55%);
-  --sweep: rgb(232 80 80 / 32%);
+  --ring: rgb(0 98 155 / 55%);
+  --sweep: rgb(64 160 230 / 34%);
 }
 
 .coin-radar {
@@ -595,33 +596,16 @@ figure:hover > .chapter-logo-spin,
 .coin {
   position: relative;
   z-index: 1;
+  display: block;
   grid-area: coin;
   align-self: center;
   width: var(--coin-size);
   height: var(--coin-size);
-  padding: 0;
-  border: 0;
   border-radius: 50%;
-  background: none;
-  color: inherit;
-  cursor: grab;
-  perspective: 1600px;
-  touch-action: pan-y;
+  perspective: 1300px;
   user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.coin:focus-visible {
-  outline: 3px solid var(--white);
-  outline-offset: 10px;
-}
-
-.coin.is-dragging {
-  cursor: grabbing;
-}
-
-.coin.is-tossing {
-  animation: coin-toss 1400ms cubic-bezier(0.3, 0.6, 0.35, 1);
+  /* Opacity lives here, outside the 3D context, so the coin never flattens. */
+  animation: coin-fade 700ms ease-out both;
 }
 
 .coin-float,
@@ -633,31 +617,59 @@ figure:hover > .chapter-logo-spin,
   transform-style: preserve-3d;
 }
 
+/* A slow drift that keeps the coin turned enough to show its thick edge. */
 .coin-float {
-  animation: coin-float 7s ease-in-out infinite;
+  animation: coin-float 8s ease-in-out infinite;
 }
 
 .coin-enter {
-  animation: coin-enter 2200ms cubic-bezier(0.16, 0.8, 0.22, 1) both;
+  animation: coin-enter 1100ms cubic-bezier(0.16, 0.8, 0.22, 1) both;
 }
 
+/* LogoCoin drives these variables every frame of its toss: it flips end over end
+   (X axis) along a gravity arc, leaning slightly off-axis like a real coin. */
 .coin-body {
-  transform: rotateY(var(--coin-rotation, 0deg));
-  transition: transform 1400ms cubic-bezier(0.15, 0.75, 0.2, 1);
+  transform:
+    translateY(calc(var(--coin-lift, 0) * var(--coin-size) * -0.42))
+    scale(calc(1 + var(--coin-lift, 0) * 0.06))
+    rotateZ(var(--coin-wobble-z, 0deg))
+    rotateY(var(--coin-wobble-y, 0deg))
+    rotateX(var(--coin-rotation, 0deg));
 }
 
-.coin.is-dragging .coin-body {
-  transition: none;
-}
-
-.coin-rim {
+/* The edge: a cylinder of reeded strips. Each strip's front half is crimson metal
+   (behind the crimson face) and its back half blue metal, lit from the top left by
+   its angle round the coin and the coin's rotation. */
+.coin-edge {
+  --edge-lit: calc(
+    -0.42 * sin(var(--edge-angle)) +
+      cos(var(--edge-angle)) *
+      (0.6 * cos(var(--coin-rotation, 0deg)) - 0.68 * sin(var(--coin-rotation, 0deg)))
+  );
   position: absolute;
   inset: 0;
-  border-radius: 50%;
+  width: calc(var(--coin-size) * 3.1416 / 72 + 1.5px);
+  height: var(--coin-thickness);
+  margin: auto;
   background:
-    repeating-conic-gradient(from 0deg, rgb(0 0 0 / 22%) 0deg 2deg, transparent 2deg 5deg),
-    linear-gradient(90deg, #7d838c, #eef1f4 45%, #a3aab3 70%, #6e747c);
-  transform: translateZ(calc(var(--coin-thickness) * (var(--rim-index) / 13 - 0.5)));
+    linear-gradient(rgb(255 255 255 / clamp(0, (var(--edge-lit) - 0.4) * 0.6, 0.28)) 0 0),
+    linear-gradient(rgb(0 0 0 / clamp(0, 0.32 - var(--edge-lit) * 0.6, 0.45)) 0 0),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 16%) 0 1px, rgb(0 0 0 / 38%) 1.5px 2.5px, transparent 3px 3.5px),
+    linear-gradient(
+      180deg,
+      #011a2e 0%,
+      #034a72 10%,
+      #1a7cb0 22%,
+      #03446a 38%,
+      #011626 49.5%,
+      #1c0102 50.5%,
+      #5a0b0c 64%,
+      #a03334 78%,
+      #6e1213 88%,
+      #240203 100%
+    );
+  backface-visibility: hidden;
+  transform: rotateZ(var(--edge-angle)) translateY(calc(var(--coin-size) / -2 + 0.5px)) rotateX(90deg);
 }
 
 .coin-face {
@@ -666,17 +678,24 @@ figure:hover > .chapter-logo-spin,
   overflow: hidden;
   border-radius: 50%;
   backface-visibility: hidden;
-  box-shadow:
-    inset 0 0 0 calc(var(--coin-size) * 0.012) rgb(255 255 255 / 28%),
-    inset 0 calc(var(--coin-size) * -0.04) calc(var(--coin-size) * 0.08) rgb(0 0 0 / 22%);
 }
 
 .coin-front {
-  transform: translateZ(calc(var(--coin-thickness) / 2 + 0.5px));
+  transform: translateZ(calc(var(--coin-thickness) / 2));
 }
 
 .coin-back {
-  transform: rotateY(180deg) translateZ(calc(var(--coin-thickness) / 2 + 0.5px));
+  transform: rotateX(180deg) translateZ(calc(var(--coin-thickness) / 2));
+}
+
+/* Darkens a face as it turns edge-on, so the flip reads as lit metal. */
+.coin-face::before {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgb(0 0 0 / 70%), rgb(0 0 0 / 45%));
+  content: '';
+  opacity: calc(var(--coin-shade, 0) * 0.85);
 }
 
 .coin-face img {
@@ -687,16 +706,16 @@ figure:hover > .chapter-logo-spin,
   pointer-events: none;
 }
 
-/* Struck-metal sheen that slides across the face. */
+/* Enamel glaze: a soft sheen that drifts across the face. */
 .coin-face::after {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / 42%) 48%, transparent 60%);
+  background: linear-gradient(115deg, transparent 38%, rgb(255 255 255 / 30%) 49%, transparent 60%);
   background-size: 300% 100%;
   content: '';
   mix-blend-mode: soft-light;
-  animation: coin-shine 6s ease-in-out infinite;
+  animation: coin-shine 8s ease-in-out infinite;
 }
 
 .coin-shadow {
@@ -706,9 +725,12 @@ figure:hover > .chapter-logo-spin,
   height: calc(var(--coin-size) * 0.09);
   margin-bottom: calc(var(--coin-size) * -0.1);
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(0 0 0 / 55%), transparent);
-  animation: coin-shadow 7s ease-in-out infinite;
+  background: radial-gradient(closest-side, rgb(0 0 0 / 60%), transparent);
+  animation: coin-shadow 8s ease-in-out infinite;
   pointer-events: none;
+  /* Shrinks and fades as the coin rises off it. */
+  scale: calc(1 - var(--coin-lift, 0) * 0.45);
+  filter: opacity(calc(1 - var(--coin-lift, 0) * 0.6));
 }
 
 .coin-caption {
@@ -724,21 +746,17 @@ figure:hover > .chapter-logo-spin,
   text-align: center;
 }
 
-.coin-hint {
-  font-weight: 500;
-  color: rgb(255 255 255 / 75%);
+@keyframes coin-fade {
+  from {
+    opacity: 0;
+  }
 }
 
 @keyframes coin-enter {
   from {
-    opacity: 0;
-    transform: translateY(-18%) scale(0.55) rotateX(25deg) rotateY(-1080deg);
-  }
-  35% {
-    opacity: 1;
+    transform: translateY(-10%) scale(0.88) rotateY(-50deg);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
@@ -746,10 +764,10 @@ figure:hover > .chapter-logo-spin,
 @keyframes coin-float {
   0%,
   100% {
-    transform: translateY(0) rotateX(6deg) rotateY(-10deg);
+    transform: translateY(0) rotateX(10deg) rotateY(-20deg);
   }
   50% {
-    transform: translateY(-3%) rotateX(-4deg) rotateY(10deg);
+    transform: translateY(-3%) rotateX(-6deg) rotateY(16deg);
   }
 }
 
@@ -762,21 +780,6 @@ figure:hover > .chapter-logo-spin,
   50% {
     opacity: 0.7;
     transform: scale(0.88);
-  }
-}
-
-@keyframes coin-toss {
-  0% {
-    transform: translateY(0) scale(1);
-  }
-  40% {
-    transform: translateY(-22%) scale(1.08);
-  }
-  75% {
-    transform: translateY(2%) scale(0.98);
-  }
-  100% {
-    transform: none;
   }
 }
 
@@ -805,40 +808,63 @@ figure:hover > .chapter-logo-spin,
   color: var(--white);
 }
 
+/* The campus aerial is a dimmed, greyscale texture under the storm ground.
+   The overlay keeps the headline side near-solid storm (white text stays
+   well above WCAG AA on every pixel), lets the towers show faintly in the
+   middle, and puts an IEEE-blue glow behind the coin. */
 .home-hero-photo {
   position: absolute;
   inset: 0;
-  z-index: -2;
+  z-index: -3;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 60% 70%;
+  object-position: 62% 30%;
+  filter: grayscale(1) contrast(1.1) brightness(0.8);
   opacity: 0.6;
-  filter: saturate(0.75) contrast(1.05);
+  pointer-events: none;
 }
 
 .home-hero::before {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: -2;
   background:
-    linear-gradient(90deg, var(--storm) 0%, rgb(12 15 20 / 88%) 38%, rgb(12 15 20 / 30%) 72%, rgb(12 15 20 / 55%) 100%),
-    linear-gradient(0deg, rgb(12 15 20 / 70%) 0%, transparent 40%);
+    radial-gradient(ellipse 40% 62% at 79% 46%, rgb(0 98 155 / 34%), transparent 70%),
+    radial-gradient(ellipse 55% 45% at 12% 100%, rgb(132 22 23 / 30%), transparent 70%),
+    linear-gradient(90deg, rgb(12 15 20 / 94%) 0%, rgb(12 15 20 / 86%) 38%, rgb(12 15 20 / 52%) 62%, rgb(12 15 20 / 68%) 100%),
+    linear-gradient(180deg, rgb(12 15 20 / 40%) 0%, transparent 30%, transparent 70%, rgb(12 15 20 / 70%) 100%);
   content: '';
+}
+
+.home-hero::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 5%) 1px, transparent 1px);
+  background-size: 3rem 3rem;
+  background-position: center;
+  mask-image: linear-gradient(90deg, transparent 10%, #000 65%, transparent 100%);
+  content: '';
+  pointer-events: none;
 }
 
 .home-hero-grid {
   display: grid;
-  min-height: clamp(32rem, calc(100svh - 14rem), 46rem);
+  /* Header + hero + Next up stay around 80% of the screen so the next
+     section always peeks in below. */
+  min-height: clamp(22rem, calc(80svh - 13.5rem), 38rem);
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
   align-items: center;
   gap: 2rem;
-  padding-block: clamp(2rem, 4vw, 3rem);
+  padding-block: clamp(1.5rem, 4svh, 3rem);
 }
 
 .home-hero h1 {
   font-family: var(--font-display);
-  font-size: var(--fs-hero);
+  font-size: min(var(--fs-hero), 11svh);
   font-weight: 800;
   line-height: 0.84;
   letter-spacing: -0.01em;
@@ -857,7 +883,7 @@ figure:hover > .chapter-logo-spin,
 
 .home-hero-summary {
   max-width: 36rem;
-  margin-top: 1.75rem;
+  margin-top: clamp(1rem, 3svh, 1.75rem);
   font-size: var(--fs-lead);
   line-height: 1.5;
   color: rgb(255 255 255 / 90%);
@@ -870,8 +896,12 @@ figure:hover > .chapter-logo-spin,
   margin-top: 2.25rem;
 }
 
+.home-hero .hero-actions {
+  margin-top: clamp(1.25rem, 3.5svh, 2.25rem);
+}
+
 .home-hero-coin {
-  --coin-size: min(24rem, 30vw);
+  --coin-size: min(24rem, 30vw, 46svh);
   justify-self: center;
 }
 
@@ -884,8 +914,8 @@ figure:hover > .chapter-logo-spin,
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 1rem 2.5rem;
-  min-height: 5.5rem;
-  padding-block: 1.25rem;
+  min-height: 4.75rem;
+  padding-block: 1rem;
 }
 
 .next-up-label {
@@ -1275,6 +1305,431 @@ figure:hover > .chapter-logo-spin,
 
 .tile-photo:hover img {
   transform: scale(1.04);
+}
+
+/* ---------------------------------------------------------- nav dropdowns */
+.nav-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-toggle {
+  display: inline-grid;
+  width: 1.6rem;
+  height: 2.4rem;
+  margin-right: -0.4rem;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.nav-toggle svg {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 200ms var(--ease-out);
+}
+
+.nav-toggle:hover {
+  color: var(--cream);
+}
+
+.nav-item[data-open] .nav-toggle svg {
+  transform: rotate(180deg);
+}
+
+/* The transparent top padding bridges the trigger and the panel, so the pointer
+   never crosses a gap; the panel itself hangs from the bottom of the crimson bar. */
+.nav-panel {
+  position: absolute;
+  top: 100%;
+  left: -1.25rem;
+  z-index: 45;
+  min-width: 15.5rem;
+  padding-top: 1.45rem;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition:
+    opacity 140ms ease,
+    transform 180ms var(--ease-out),
+    visibility 0s linear 180ms;
+}
+
+.nav-item[data-open] .nav-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 160ms ease,
+    transform 220ms var(--ease-out),
+    visibility 0s;
+}
+
+.nav-panel ul {
+  margin: 0;
+  padding: 0.5rem 0;
+  border-bottom: 4px solid var(--crimson);
+  background: var(--white);
+  box-shadow: 0 26px 44px -22px rgb(0 0 0 / 55%);
+  list-style: none;
+}
+
+.nav-panel a {
+  display: block;
+  padding: 0.7rem 1.25rem;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.nav-panel a:hover,
+.nav-panel a:focus-visible {
+  background: var(--fog);
+  box-shadow: inset 4px 0 0 var(--crimson);
+  color: var(--crimson);
+}
+
+.nav-panel a:focus-visible {
+  outline: 3px solid var(--crimson);
+  outline-offset: -3px;
+}
+
+.mobile-nav-sheet {
+  overflow-y: auto;
+}
+
+.mobile-nav-list,
+.mobile-nav-sub {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mobile-nav-list > li {
+  border-bottom: 1px solid rgb(255 255 255 / 25%);
+}
+
+.mobile-nav-list > li > a {
+  border-bottom: 0;
+}
+
+.mobile-nav-sub {
+  display: grid;
+  margin: -0.35rem 0 0.9rem 0.15rem;
+  padding-left: 0.9rem;
+  border-left: 2px solid rgb(255 255 255 / 35%);
+}
+
+.mobile-nav-sub a {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  color: rgb(255 255 255 / 88%);
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.mobile-nav-sub a:hover {
+  color: var(--cream);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+/* Seven items, three chevrons and the Join button need more room than the old nav. */
+@media (max-width: 1500px) {
+  .brand-lockup-branch {
+    display: none;
+  }
+}
+
+@media (max-width: 1240px) {
+  .desktop-nav {
+    display: none;
+  }
+
+  .mobile-menu-trigger {
+    display: inline-flex !important;
+  }
+}
+
+/* -------------------------------------------------------------------- news */
+.news-section {
+  padding-block: var(--section);
+  background: var(--fog);
+}
+
+.news-section .post-card,
+.news-section .post-feature-skeleton {
+  background: var(--white);
+}
+
+.news-layout {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.post-card.post-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+}
+
+.post-card.post-feature .post-feature-media {
+  height: 100%;
+  min-height: 24rem;
+  aspect-ratio: auto;
+}
+
+.post-feature-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.1rem;
+  padding: clamp(1.75rem, 4vw, 3.5rem);
+}
+
+.post-feature-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--gray);
+}
+
+.post-feature-kicker span {
+  padding: 0.3rem 0.7rem;
+  background: var(--crimson);
+  color: var(--white);
+  font-weight: 700;
+}
+
+.post-accent-blue .post-feature-kicker span {
+  background: var(--ieee-blue);
+}
+
+.post-accent-storm .post-feature-kicker span {
+  background: var(--storm);
+}
+
+.post-card.post-feature h3 {
+  font-size: var(--fs-title);
+  line-height: 0.9;
+  text-wrap: balance;
+}
+
+.post-feature-summary {
+  font-size: var(--fs-lead);
+  line-height: 1.5;
+  color: var(--charcoal);
+}
+
+.post-card.post-feature .post-card-more {
+  margin-top: 0.5rem;
+}
+
+.post-card.post-feature .post-card-mark {
+  width: 28%;
+  max-width: 11rem;
+}
+
+.post-feature-skeleton {
+  min-height: 26rem;
+  border-top: 6px solid var(--line);
+  background: var(--fog);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+fieldset.post-filter {
+  min-width: 0;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  border: 0;
+}
+
+.post-filter-count {
+  margin-left: 0.5rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.post-filter button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+/* Empty, not-connected and error states share one designed card. The rings
+   echo the radar sweep behind the coin. */
+.news-soon {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2rem 3rem;
+  padding: clamp(2rem, 5vw, 4rem);
+  overflow: hidden;
+  background:
+    repeating-radial-gradient(
+      circle at 88% 50%,
+      transparent 0 3.75rem,
+      rgb(255 255 255 / 8%) 3.75rem calc(3.75rem + 1px)
+    ),
+    radial-gradient(circle at 88% 50%, rgb(255 255 255 / 14%), transparent 40%),
+    var(--crimson);
+  color: var(--white);
+}
+
+.news-soon-copy {
+  display: grid;
+  max-width: 42rem;
+  justify-items: start;
+  gap: 1.1rem;
+}
+
+.news-soon-kicker {
+  padding: 0.35rem 0.75rem;
+  background: var(--white);
+  color: var(--crimson);
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.news-soon h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-title);
+  font-weight: 800;
+  line-height: 0.9;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.news-soon-copy > p:not(.news-soon-kicker) {
+  color: rgb(255 255 255 / 88%);
+}
+
+.news-soon .button {
+  margin-top: 0.5rem;
+}
+
+.news-soon-mark {
+  width: clamp(7rem, 14vw, 11rem);
+  height: clamp(7rem, 14vw, 11rem);
+  margin-right: clamp(0rem, 3vw, 2.5rem);
+  filter: drop-shadow(0 14px 26px rgb(0 0 0 / 40%));
+}
+
+/* ----------------------------------------------------------------- contact */
+.apply-form .contact-msg {
+  display: flex;
+  min-height: 1.35rem;
+  justify-content: space-between;
+  gap: 1rem;
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--gray);
+}
+
+.apply-form .contact-msg.contact-msg-error {
+  font-weight: 700;
+  color: #b42318;
+}
+
+.contact-count {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.apply-actions .apply-error a,
+.contact-fallback a:not(.button) {
+  color: var(--crimson);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.contact-done {
+  align-content: start;
+}
+
+.contact-channels {
+  background: var(--fog);
+}
+
+.contact-channels .channel-card {
+  background: var(--white);
+}
+
+.about-contact {
+  padding-block: clamp(3.5rem, 6vw, 5.5rem);
+}
+
+.about-contact .section-head {
+  margin-bottom: 0;
+}
+
+/* ------------------------------------------------------- footer additions */
+.footer-message {
+  margin-top: 0.6rem;
+}
+
+.footer-message svg {
+  width: 0.95rem;
+}
+
+.footer-signin {
+  color: rgb(230 230 230 / 70%);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgb(230 230 230 / 35%);
+  text-underline-offset: 0.25em;
+}
+
+.footer-signin:hover {
+  color: var(--white);
+  text-decoration-color: currentColor;
+}
+
+@media (max-width: 900px) {
+  .post-card.post-feature {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .post-card.post-feature .post-feature-media {
+    min-height: 0;
+    aspect-ratio: 16 / 10;
+  }
+}
+
+@media (max-width: 700px) {
+  .news-soon {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .news-soon-mark {
+    order: -1;
+    width: 5rem;
+    height: 5rem;
+    margin: 0;
+  }
+
+  .news-soon .button {
+    width: 100%;
+  }
 }
 
 /* ---------------------------------------------------- storm results band */
@@ -3820,6 +4275,124 @@ figure:hover > .chapter-logo-spin,
   border-left-color: var(--storm) !important;
 }
 
+/* Admin: inbox, invites and expired posts */
+.admin-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.admin-nav-badge {
+  display: inline-grid;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  margin-left: auto;
+  padding: 0 0.4rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--cream);
+  color: var(--crimson);
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.admin-inbox-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+
+.admin-inbox-show {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 700;
+}
+
+.admin-inbox-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 0.4rem;
+}
+
+.admin-inbox-kind {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.admin-inbox-unread .admin-application-head strong {
+  color: var(--crimson);
+}
+
+.admin-pill-expired {
+  background: var(--fog);
+  color: var(--gray);
+  text-decoration: line-through;
+}
+
+.admin-invite-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-invite-head p {
+  max-width: 40rem;
+  margin-top: 0.35rem;
+}
+
+.admin-invite-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.5rem 0.75rem;
+  padding: 1rem;
+  background: var(--fog);
+}
+
+.admin-invite-link label {
+  display: grid;
+  gap: 0.4rem;
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 700;
+}
+
+.admin-invite-link small {
+  grid-column: 1 / -1;
+  color: var(--gray);
+}
+
+.admin-invite-subhead {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+@media (max-width: 700px) {
+  .admin-invite-link {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-application-head {
+    flex-wrap: wrap;
+  }
+
+  .admin-inbox-tags {
+    justify-content: start;
+  }
+}
+
 .admin-accent input {
   accent-color: var(--crimson);
 }
@@ -4016,13 +4589,55 @@ figure:hover > .chapter-logo-spin,
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* Stacked, the coin would push Next up below the fold. Instead the coin
+     sits beside the summary: title, then summary | coin, then actions. */
   .home-hero-grid {
     min-height: 0;
-    gap: 3.5rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'title title'
+      'summary coin'
+      'actions actions';
+    gap: 0 clamp(1rem, 4vw, 2.5rem);
+    padding-block: 1.5rem;
+  }
+
+  .home-hero-copy {
+    display: contents;
+  }
+
+  .home-hero h1 {
+    grid-area: title;
+  }
+
+  .home-hero-summary {
+    grid-area: summary;
+    align-self: center;
+    font-size: clamp(1.0625rem, 0.9rem + 1vw, var(--fs-lead));
+  }
+
+  .home-hero .hero-actions {
+    grid-area: actions;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
   }
 
   .home-hero-coin {
-    --coin-size: min(18rem, 62vw);
+    --coin-size: clamp(6.75rem, 28vw, 15rem);
+    grid-area: coin;
+    align-self: center;
+    margin-top: clamp(1rem, 3svh, 1.75rem);
+  }
+
+  .home-hero-photo {
+    object-position: 70% 35%;
+  }
+
+  .home-hero::before {
+    background:
+      radial-gradient(ellipse 50% 40% at 85% 52%, rgb(0 98 155 / 34%), transparent 70%),
+      linear-gradient(180deg, rgb(12 15 20 / 72%) 0%, rgb(12 15 20 / 88%) 45%, rgb(12 15 20 / 92%) 100%),
+      linear-gradient(90deg, rgb(12 15 20 / 30%), transparent 70%);
   }
 
   .section-head {
@@ -4034,10 +4649,24 @@ figure:hover > .chapter-logo-spin,
     justify-self: start;
   }
 
+  /* Label and link share the first row so the band stays short. */
   .next-up-inner {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
     justify-items: start;
-    gap: 0.75rem;
+    gap: 0.6rem 1rem;
+    min-height: 0;
+    padding-block: 1rem;
+  }
+
+  .next-up-link {
+    grid-row: 1;
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  .next-up-title,
+  .next-up-meta {
+    grid-column: 1 / -1;
   }
 
   .track-section-flip .track-photo {
@@ -4253,8 +4882,16 @@ figure:hover > .chapter-logo-spin,
   }
 
   .coin-radar::after,
+  .coin,
+  .coin-enter,
   .coin-float,
+  .coin-shadow,
   .coin-face::after {
     animation: none !important;
+  }
+
+  /* A still coin, turned just enough to show its edge. */
+  .coin-float {
+    transform: rotateX(8deg) rotateY(-18deg);
   }
 }

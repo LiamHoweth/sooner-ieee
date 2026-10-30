@@ -1,13 +1,13 @@
 ---
 name: IEEE Sooners
-description: OU-familiar crimson system for the IEEE Student Branch at the University of Oklahoma, with the chapter's tornado logo struck as a flippable 3D challenge coin.
+description: OU-familiar crimson system for the IEEE Student Branch at the University of Oklahoma, with the chapter's tornado logo struck as a thick 3D challenge coin.
 
 colors:
   crimson: "#841617"        # OU crimson: header, page heroes, tiles, buttons
   crimson-deep: "#4e0002"   # footer
   crimson-hover: "#6a1112"
   cream: "#fdf9d8"          # accents on crimson/dark (leads, highlights)
-  ieee-blue: "#00629b"      # only alongside the primary (blue) mark
+  ieee-blue: "#00629b"      # only alongside the secondary (blue) mark
   ink: "#141414"
   charcoal: "#323232"       # secondary text
   gray: "#5c5c5c"           # meta text
@@ -41,14 +41,26 @@ RaXPol storm radar and the National Weather Center.
 
 ## 2. Logos
 
-- Sources of truth: the approved logo screenshots in `assets/brand/`.
-- `scripts/cut-logos.mjs` cuts circular WebP faces into `assets/brand/coin/`. Re-run it if the
-  source images change.
-- `ChapterLogo` renders the small marks. The header and page heroes use primary (blue); the footer
-  uses secondary (crimson). Marks spin like a coin on hover.
-- `LogoCoin` is the 3D coin, with primary on the front and secondary on the back. Click, tap, Enter
-  or drag to flip it. It appears in the home hero, the About "Our official marks" section and the
-  404 page. Use it on dark (storm) grounds only.
+- Sources of truth: the official vector logos in `assets/brand/svg/` (`IEEE-LOGO-Final_*.svg`;
+  #5, the OU crimson disc, is the primary mark; #3, the IEEE blue disc, is the secondary; the
+  all-variants sheet #9 is not copied). The older
+  screenshots in `assets/brand/*.png` are no longer used.
+- `scripts/cut-coin.mjs` renders everything from those SVGs: the lit coin faces in
+  `assets/brand/faces/`, the flat marks in `assets/brand/marks/`, and `public/favicon.png` (64px)
+  and `public/apple-touch-icon.png` (180px, crimson square) from the crimson mark. Re-run it
+  (`node scripts/cut-coin.mjs`) if the SVGs change.
+- `ChapterLogo` renders the small flat marks. The default is primary (crimson) with a thin white
+  keyline outside the disc, so it stays visible on crimson grounds (header, mobile menu, page heroes,
+  news cards). `variant="secondary"` is the blue mark; the footer uses it on crimson-deep. Marks spin
+  like a coin on hover.
+- `LogoCoin` is the thick 3D challenge coin, with the crimson mark on the front and the blue mark on
+  the back. It shows crimson at rest and its one toss lands crimson side up. Each face sets the logo disc inside a raised, bevelled metal rim tinted to the face
+  colour; lighting on the white artwork makes it read as struck in relief. The edge is a ring of
+  reeded strips, crimson metal on the front half and blue on the back. The radar rings behind it
+  follow the side facing the viewer. It is not interactive. It
+  appears in the home hero, the About "Our official marks" section and the 404 page. Use it on dark
+  (storm) grounds only.
+- The coin's lighting sits on top of the artwork; its shapes and flat colours stay as drawn.
 - Never recolour, redraw or crop into the logos.
 
 ## 3. Layout patterns
@@ -74,9 +86,10 @@ they exist, and keep the credits in sync.
 
 ## 5. Motion
 
-The coin spins in on load, floats, and tosses on click. The radar sweeps behind it. Sections fade up
-as they scroll in (`data-reveal`). Marks spin on hover. Under `prefers-reduced-motion`, all of this
-is still or instant; the coin still flips, without animation.
+The coin eases in on load, tosses once (end over end, with a gravity arc and a damped settle) a
+moment after it is on screen, then just floats. The radar sweeps behind it. Sections fade up as they
+scroll in (`data-reveal`). Marks spin on hover. Under `prefers-reduced-motion`, all of this is still
+or instant; the coin is a still image, turned slightly to show its edge.
 
 ## 6. Content rules
 

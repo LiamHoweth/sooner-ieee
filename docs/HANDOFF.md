@@ -57,16 +57,19 @@ Pick one:
 Either way, confirm:
 
 - `https://<api-domain>/api/health` returns `ok`.
-- Posts appear on `/posts.html`.
+- Posts appear on `/news.html`.
 - Sign-in works.
-- A test sponsor application arrives. Delete it afterwards.
+- A test sponsor application and a test Contact-page message both show up in the admin **Inbox**.
+  Delete them afterwards (owners only).
 
 ## 4. Hand over the admin area
 
 1. Sign in as an owner and open **Admins**.
-2. **Add the new webmaster** with their own username, Gmail and a temporary password. Make them an
-   **Owner**.
-3. They sign in and change their password under **My account**.
+2. **Invite the new webmaster**: **Invite officer**, role **Owner**, then copy the link and send it to
+   them privately. They choose their own username and password. The link works once and expires after
+   7 days.
+   - Or use **Add with a password** and give them a temporary password, which they then change under
+     **My account**.
 4. **Keep at least two owners** at all times: the webmaster and the president, for example.
 5. Disable accounts for officers who have graduated or left. Disabling keeps their posts and shows
    their name on them.
@@ -74,7 +77,7 @@ Either way, confirm:
 ## 5. Every semester
 
 - [ ] Update the officer roster in `lib/chapter-content.ts`
-- [ ] Add, enable or disable admin accounts for the new officers
+- [ ] Invite the new officers (Admins → Invite officer) and disable accounts for those who left
 - [ ] Update current sponsors in `lib/chapter-content.ts` (logos need the sponsor's permission)
 - [ ] Check that the sponsorship packet link in `lib/chapter-content.ts` is current
 - [ ] Download a database backup (Admin → My account → Backups) and store it somewhere private
@@ -89,6 +92,9 @@ Either way, confirm:
 |---|---|---|
 | Posts page says "Posts are taking a break" | API down, or `IEEE_API_URL` wrong | Open `<api>/api/health`. Check Railway deploy logs and the GitHub variable. |
 | Admin says "Admin is not connected" | Site built without `IEEE_API_URL` | Set the variable and re-run the Pages workflow. |
+| Contact form fails, or the Inbox says "Not found" | API is older than the website (no `/api/messages`) | Redeploy the Railway API from the latest `main`. Migrations run on their own at startup. |
+| "This invite link has expired or was already used" | The link is over 7 days old, was used, or was cancelled | An owner makes a new invite under Admins. |
+| Invite links point at the wrong address | `ADMIN_URL` on Railway is out of date | Set it to the live admin page, for example after a repo transfer. |
 | Sign-in works locally but not on the live site | Origin missing from `ALLOWED_ORIGINS` | Add the exact site origin (no path) on Railway and redeploy. |
 | Images missing after a deploy | Volume not mounted or `DATA_DIR` wrong | The volume must be at `/data` with `DATA_DIR=/data`. |
 | "Too many sign-in attempts" | Rate limit | Wait 15 minutes, or an owner resets the password. |

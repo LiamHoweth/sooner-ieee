@@ -1,15 +1,15 @@
 'use client';
 
-import { Download, ExternalLink, Mail, Pin, Plus, UserPlus } from 'lucide-react';
+import { Copy, Download, ExternalLink, Link2, Pin, Plus, UserPlus } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { postHref } from '@/components/post-feed';
 import { api, ApiError, downloadFile } from '@/lib/api';
-import { formatPostDate, type Post } from '@/lib/posts';
+import { formatPostDate, isExpired, type Post } from '@/lib/posts';
 
-import { type AdminUser, formatDateTime, type SponsorApplication } from './types';
+import { type AdminInvite, type AdminUser, formatDateTime } from './types';
 
-function useLoad<T>(path: string) {
+export function useLoad<T>(path: string) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState('');
   const reload = useCallback(() => {
@@ -24,7 +24,7 @@ function useLoad<T>(path: string) {
   return { data, error, reload };
 }
 
-// ------------------------------------------------------------------ posts
+// ------------------------------------------------------------- news posts
 
 export function PostsPanel({ onEdit }: { onEdit: (id: number | null) => void }) {
   const { data, error } = useLoad<{ posts: Post[] }>('/api/admin/posts');
@@ -36,15 +36,15 @@ export function PostsPanel({ onEdit }: { onEdit: (id: number | null) => void }) 
     <section className="admin-panel">
       <header className="admin-panel-head">
         <div>
-          <h1>Posts</h1>
-          <p>Write recaps, announcements and opportunities. Drafts stay private until you publish.</p>
+          <h1>News posts</h1>
+          <p>Write recaps, announcements and opportunities for the News page. Drafts stay private until you publish.</p>
         </div>
         <button type="button" className="button button-crimson" onClick={() => onEdit(null)}>
           <Plus aria-hidden="true" />
           New post
         </button>
       </header>
-      <div className="admin-tabs-inline" role="toolbar" aria-label="Filter posts">
+      <div className="admin-tabs-inline" role="toolbar" aria-label="Filter news posts">
         {(['all', 'published', 'draft'] as const).map((value) => (
           <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>
             {value === 'all' ? 'All' : value === 'published' ? 'Published' : 'Drafts'}
@@ -52,10 +52,11 @@ export function PostsPanel({ onEdit }: { onEdit: (id: number | null) => void }) 
         ))}
       </div>
       {error && <p className="admin-error">{error}</p>}
-      {data && posts.length === 0 && <p className="admin-muted">No posts here yet. Start one with “New post”.</p>}
+      {data && posts.length === 0 && <p className="admin-muted">No news posts here yet. Start one with “New post”.</p>}
       <ul className="admin-list">
         {posts.map((post) => {
           const scheduled = post.status === 'published' && post.publishedAt && Date.parse(post.publishedAt) > now;
+          const expired = post.status === 'published' && isExpired(post, now);
           return (
             <li key={post.id}>
               <button type="button" className="admin-list-main" onClick={() => onEdit(post.id)}>
@@ -65,6 +66,7 @@ export function PostsPanel({ onEdit }: { onEdit: (id: number | null) => void }) 
                   <small>
                     {post.category} · {scheduled ? `Scheduled for ${formatPostDate(post.publishedAt)}` : post.status === 'published' ? `Published ${formatPostDate(post.publishedAt)}` : `Draft, edited ${formatDateTime(post.updatedAt)}`}
                     {post.author ? ` · ${post.author}` : ''}
+                    {post.expiresAt && !expired ? ` · Hides ${formatDateTime(post.expiresAt)}` : ''}
                   </small>
                 </span>
               </button>
@@ -75,9 +77,15 @@ export function PostsPanel({ onEdit }: { onEdit: (id: number | null) => void }) 
                     Pinned
                   </span>
                 )}
-                <span className={post.status === 'published' ? 'admin-pill admin-pill-live' : 'admin-pill'}>
-                  {scheduled ? 'Scheduled' : post.status === 'published' ? 'Live' : 'Draft'}
-                </span>
+                {expired ? (
+                  <span className="admin-pill admin-pill-expired" title="Hidden from the News page. Its link still works.">
+                    Expired
+                  </span>
+                ) : (
+                  <span className={post.status === 'published' ? 'admin-pill admin-pill-live' : 'admin-pill'}>
+                    {scheduled ? 'Scheduled' : post.status === 'published' ? 'Live' : 'Draft'}
+                  </span>
+                )}
                 {post.status === 'published' && !scheduled && (
                   <a className="admin-icon-button" href={postHref(post.slug)} target="_blank" rel="noreferrer" aria-label={`View ${post.title} on the site`}>
                     <ExternalLink aria-hidden="true" />
@@ -87,176 +95,6 @@ export function PostsPanel({ onEdit }: { onEdit: (id: number | null) => void }) 
             </li>
           );
         })}
-      </ul>
-    </section>
-  );
-}
-
-// ----------------------------------------------------- sponsor applications
-
-const STATUS_LABELS: Record<SponsorApplication['status'], string> = {
-  new: 'New',
-  contacted: 'Contacted',
-  accepted: 'Accepted',
-  declined: 'Declined',
-};
-
-const BUDGET_LABELS: Record<string, string> = {
-  'under-500': 'Under $500',
-  '500-1000': '$500 – $1,000',
-  '1000-5000': '$1,000 – $5,000',
-  '5000-plus': '$5,000+',
-  'in-kind': 'In-kind',
-  'not-sure': 'Not sure yet',
-};
-
-const INTEREST_LABELS: Record<string, string> = {
-  speaker: 'Speaker / tech talk',
-  workshop: 'Workshop',
-  projects: 'Project materials',
-  travel: 'Competition travel',
-  events: 'Event sponsor',
-  recruiting: 'Recruiting',
-  other: 'Other',
-};
-
-export function ApplicationsPanel({ isOwner }: { isOwner: boolean }) {
-  const { data, error, reload } = useLoad<{ applications: SponsorApplication[] }>('/api/admin/sponsor-applications');
-  const [openId, setOpenId] = useState<number | null>(null);
-  const [notice, setNotice] = useState('');
-
-  async function update(id: number, change: Partial<Pick<SponsorApplication, 'status' | 'notes'>>) {
-    try {
-      await api(`/api/admin/sponsor-applications/${id}`, { method: 'PATCH', body: change, auth: true });
-      setNotice('Saved.');
-      reload();
-    } catch (problem) {
-      setNotice(problem instanceof ApiError ? problem.message : 'Could not save.');
-    }
-  }
-
-  async function remove(id: number) {
-    if (!window.confirm('Delete this application for good?')) return;
-    await api(`/api/admin/sponsor-applications/${id}`, { method: 'DELETE', auth: true }).catch(() => {});
-    reload();
-  }
-
-  const applications = data?.applications ?? [];
-  const fresh = applications.filter((item) => item.status === 'new').length;
-
-  return (
-    <section className="admin-panel">
-      <header className="admin-panel-head">
-        <div>
-          <h1>Sponsor applications</h1>
-          <p>{fresh ? `${fresh} new ${fresh === 1 ? 'application needs' : 'applications need'} a reply.` : 'Everything has been looked at.'}</p>
-        </div>
-        <button type="button" className="button button-outline" onClick={() => void downloadFile('/api/admin/sponsor-applications.csv', 'sponsor-applications.csv')}>
-          <Download aria-hidden="true" />
-          Export CSV
-        </button>
-      </header>
-      {error && <p className="admin-error">{error}</p>}
-      {notice && (
-        <output className="admin-info">
-          {notice}
-        </output>
-      )}
-      {data && applications.length === 0 && <p className="admin-muted">No applications yet. They arrive here from the Sponsors page form.</p>}
-      <ul className="admin-applications">
-        {applications.map((item) => (
-          <li key={item.id} className={`admin-application admin-application-${item.status}`}>
-            <button type="button" className="admin-application-head" aria-expanded={openId === item.id} onClick={() => setOpenId(openId === item.id ? null : item.id)}>
-              <span>
-                <strong>{item.organization}</strong>
-                <small>
-                  {item.contactName} · {formatDateTime(item.createdAt)}
-                </small>
-              </span>
-              <span className={`admin-pill admin-status-${item.status}`}>{STATUS_LABELS[item.status]}</span>
-            </button>
-            {openId === item.id && (
-              <div className="admin-application-body">
-                <dl>
-                  <div>
-                    <dt>Email</dt>
-                    <dd>
-                      <a href={`mailto:${item.email}?subject=${encodeURIComponent('IEEE Sooners sponsorship')}`}>
-                        <Mail aria-hidden="true" />
-                        {item.email}
-                      </a>
-                    </dd>
-                  </div>
-                  {item.phone && (
-                    <div>
-                      <dt>Phone</dt>
-                      <dd>{item.phone}</dd>
-                    </div>
-                  )}
-                  {item.website && (
-                    <div>
-                      <dt>Website</dt>
-                      <dd>
-                        <a href={item.website} target="_blank" rel="noreferrer">
-                          {item.website}
-                        </a>
-                      </dd>
-                    </div>
-                  )}
-                  <div>
-                    <dt>Interested in</dt>
-                    <dd>{item.interests.map((value) => INTEREST_LABELS[value] ?? value).join(', ') || 'Not specified'}</dd>
-                  </div>
-                  <div>
-                    <dt>Budget</dt>
-                    <dd>{BUDGET_LABELS[item.budget] ?? (item.budget || 'Not specified')}</dd>
-                  </div>
-                  <div>
-                    <dt>Timing</dt>
-                    <dd>{item.timeline || 'Not specified'}</dd>
-                  </div>
-                </dl>
-                {item.message && <p className="admin-application-message">{item.message}</p>}
-                <form
-                  className="admin-form"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    const form = new FormData(event.currentTarget);
-                    const notes = form.get('notes');
-                    void update(item.id, { status: form.get('status') as SponsorApplication['status'], notes: typeof notes === 'string' ? notes : '' });
-                  }}
-                >
-                  <div className="admin-row">
-                    <label>
-                      <span>Status</span>
-                      <select name="status" defaultValue={item.status}>
-                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                  <label>
-                    <span>Officer notes (private)</span>
-                    <textarea name="notes" rows={3} defaultValue={item.notes} maxLength={8000} />
-                  </label>
-                  <div className="admin-row-actions">
-                    <button className="button button-crimson" type="submit">
-                      Save
-                    </button>
-                    {isOwner && (
-                      <button type="button" className="admin-danger" onClick={() => remove(item.id)}>
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </form>
-              </div>
-            )}
-          </li>
-        ))}
       </ul>
     </section>
   );
@@ -309,16 +147,17 @@ export function UsersPanel({ me }: { me: AdminUser }) {
         <div>
           <h1>Admins</h1>
           <p>
-            Everyone who can sign in here. Owners manage accounts and backups; admins write posts and handle sponsor applications.
+            Everyone who can sign in here. Owners manage accounts and backups; admins write news posts and answer the inbox.
           </p>
         </div>
         {isOwner && (
-          <button type="button" className="button button-crimson" onClick={() => setAdding(!adding)}>
+          <button type="button" className="button button-outline" onClick={() => setAdding(!adding)}>
             <UserPlus aria-hidden="true" />
-            Add admin
+            Add with a password
           </button>
         )}
       </header>
+      {isOwner && <InvitesCard />}
       {notice && (
         <output className={notice.tone === 'error' ? 'admin-error' : 'admin-info'}>
           {notice.text}
@@ -346,7 +185,7 @@ export function UsersPanel({ me }: { me: AdminUser }) {
             <label>
               <span>Role</span>
               <select name="role" defaultValue="admin">
-                <option value="admin">Admin: posts and applications</option>
+                <option value="admin">Admin: news posts and inbox</option>
                 <option value="owner">Owner: also manages admins and backups</option>
               </select>
             </label>
@@ -423,6 +262,152 @@ export function UsersPanel({ me }: { me: AdminUser }) {
   );
 }
 
+// ---------------------------------------------------------------- invites
+
+function InvitesCard() {
+  const { data, error, reload } = useLoad<{ invites: AdminInvite[] }>('/api/admin/invites');
+  const [inviting, setInviting] = useState(false);
+  const [created, setCreated] = useState<{ url: string; expiresAt: string; emailed: boolean; to: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [notice, setNotice] = useState<{ tone: 'error' | 'info'; text: string } | null>(null);
+
+  async function invite(event: React.SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const rawEmail = form.get('email');
+    const email = typeof rawEmail === 'string' ? rawEmail.trim() : '';
+    try {
+      const result = await api<{ invite: AdminInvite; url: string; emailed: boolean }>('/api/admin/invites', {
+        method: 'POST',
+        auth: true,
+        body: { email, displayName: form.get('displayName'), role: form.get('role'), sendEmail: form.get('sendEmail') === 'on' },
+      });
+      setCreated({ url: result.url, expiresAt: result.invite.expiresAt, emailed: result.emailed, to: email });
+      setCopied(false);
+      setInviting(false);
+      setNotice(null);
+      reload();
+    } catch (problem) {
+      setNotice({ tone: 'error', text: problem instanceof ApiError ? problem.message : 'Could not create the invite.' });
+    }
+  }
+
+  async function copy() {
+    if (!created) return;
+    try {
+      await navigator.clipboard.writeText(created.url);
+      setCopied(true);
+    } catch {
+      // Clipboard blocked (older browser or insecure context): select the text so it can be copied by hand.
+      (document.getElementById('admin-invite-url') as HTMLInputElement | null)?.select();
+    }
+  }
+
+  async function revoke(item: AdminInvite) {
+    if (!window.confirm('Cancel this invite? The link stops working straight away.')) return;
+    try {
+      await api(`/api/admin/invites/${item.id}`, { method: 'DELETE', auth: true });
+      setNotice({ tone: 'info', text: 'Invite cancelled.' });
+      reload();
+    } catch (problem) {
+      setNotice({ tone: 'error', text: problem instanceof ApiError ? problem.message : 'Could not cancel the invite.' });
+    }
+  }
+
+  const invites = data?.invites ?? [];
+
+  return (
+    <div className="admin-card">
+      <div className="admin-invite-head">
+        <div>
+          <h2>Invite an officer</h2>
+          <p className="admin-muted">
+            Make a one-time link instead of typing a password for them. They pick their own username and password. Links expire after 7 days.
+          </p>
+        </div>
+        <button type="button" className="button button-crimson" onClick={() => setInviting(!inviting)}>
+          <Link2 aria-hidden="true" />
+          Invite officer
+        </button>
+      </div>
+      {notice && <output className={notice.tone === 'error' ? 'admin-error' : 'admin-info'}>{notice.text}</output>}
+      {error && <p className="admin-error">{error}</p>}
+      {inviting && (
+        <form className="admin-form" onSubmit={invite}>
+          <div className="admin-row">
+            <label>
+              <span>Name (optional)</span>
+              <input name="displayName" maxLength={80} />
+            </label>
+            <label>
+              <span>Gmail (optional)</span>
+              <input name="email" type="email" maxLength={200} autoCapitalize="none" />
+            </label>
+            <label>
+              <span>Role</span>
+              <select name="role" defaultValue="admin">
+                <option value="admin">Admin: news posts and inbox</option>
+                <option value="owner">Owner: also manages admins and backups</option>
+              </select>
+            </label>
+          </div>
+          <label className="admin-check">
+            <input type="checkbox" name="sendEmail" />
+            <span>Also email the link to that address (only works if site email is set up)</span>
+          </label>
+          <div className="admin-row-actions">
+            <button className="button button-crimson" type="submit">
+              Create invite link
+            </button>
+            <button type="button" className="admin-link-button" onClick={() => setInviting(false)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+      {created && (
+        <div className="admin-invite-link">
+          <label>
+            <span>Invite link: send it privately. It works once and is only shown now.</span>
+            <input id="admin-invite-url" readOnly value={created.url} onFocus={(event) => event.currentTarget.select()} />
+          </label>
+          <button type="button" className="button button-outline" onClick={() => void copy()}>
+            <Copy aria-hidden="true" />
+            {copied ? 'Copied' : 'Copy link'}
+          </button>
+          <small>
+            Expires {formatDateTime(created.expiresAt)}.
+            {created.emailed ? ` Also emailed to ${created.to}.` : ''}
+          </small>
+        </div>
+      )}
+      {invites.length > 0 && (
+        <>
+          <h3 className="admin-invite-subhead">Waiting to be accepted</h3>
+          <ul className="admin-people">
+            {invites.map((item) => (
+              <li key={item.id}>
+                <div>
+                  <strong>{item.displayName || item.email || 'Unnamed invite'}</strong>
+                  <small>
+                    {item.email && item.displayName ? `${item.email} · ` : ''}
+                    {item.role === 'owner' ? 'Owner' : 'Admin'} · made {formatDateTime(item.createdAt)}
+                    {item.createdBy ? ` by ${item.createdBy}` : ''}
+                  </small>
+                  <small>Expires {formatDateTime(item.expiresAt)}</small>
+                </div>
+                <button type="button" className="admin-link-button" onClick={() => void revoke(item)}>
+                  Cancel invite
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------- account
 
 export function AccountPanel({ me, onUpdated }: { me: AdminUser; onUpdated: (admin: AdminUser) => void }) {
@@ -483,7 +468,7 @@ export function AccountPanel({ me, onUpdated }: { me: AdminUser; onUpdated: (adm
             <input name="displayName" defaultValue={me.display_name} required maxLength={80} />
           </label>
           <label>
-            <span>Gmail (for password resets and sponsor alerts)</span>
+            <span>Gmail (for password resets and inbox alerts)</span>
             <input name="email" type="email" defaultValue={me.email} required maxLength={200} />
           </label>
           <button className="button button-crimson" type="submit">
@@ -514,8 +499,8 @@ export function AccountPanel({ me, onUpdated }: { me: AdminUser; onUpdated: (adm
         <div className="admin-card">
           <h2>Backups</h2>
           <p className="admin-muted">
-            Download a copy before handing the site to a new webmaster, and once a semester. The database file holds every post, application and admin
-            account; the export is a readable JSON copy of the content. See docs/HANDOFF.md.
+            Download a copy before handing the site to a new webmaster, and once a semester. The database file holds every post, message, application and
+            admin account; the export is a readable JSON copy of the content. See docs/HANDOFF.md.
           </p>
           <div className="admin-row-actions">
             <button type="button" className="button button-outline" onClick={() => void downloadFile('/api/admin/backup.sqlite', 'ieee-sooners.sqlite')}>

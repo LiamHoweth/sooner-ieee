@@ -1,8 +1,8 @@
 # Backend (API on Railway)
 
 The website is static (GitHub Pages). Everything officers change while the site is running goes
-through a small API in `server/`, hosted on Railway: posts, images, admin accounts and sponsor
-applications.
+through a small API in `server/`, hosted on Railway: news posts, images, admin accounts, sponsor
+applications and contact messages.
 
 ```
 Visitor / officer browser
@@ -11,7 +11,7 @@ Visitor / officer browser
    ▼
 Railway service "ieee-sooners-api"  (server/, Node 22+, Hono)
    └── volume mounted at /data
-         ├── ieee-sooners.sqlite   (posts, admins, sessions, applications, audit log)
+         ├── ieee-sooners.sqlite   (posts, admins, sessions, invites, applications, messages, audit log)
          └── uploads/              (images officers upload)
 ```
 
@@ -23,12 +23,73 @@ SQLite on a persistent volume, one replica, and scrypt-hashed passwords.
 | Area | Routes | Who |
 |---|---|---|
 | Health | `GET /api/health` | anyone (Railway health check) |
-| Posts | `GET /api/posts`, `GET /api/posts/:slug` | anyone, published posts only |
+| News posts | `GET /api/posts`, `GET /api/posts/:slug` | anyone, published posts only (the list leaves out expired posts) |
 | Images | `GET /uploads/:file` | anyone |
 | Sponsor form | `POST /api/sponsor-applications` | anyone (rate-limited, spam trap) |
+| Contact form | `POST /api/messages` | anyone (rate-limited, spam trap) |
+| Invite links | `POST /api/invites/lookup`, `POST /api/invites/accept` | anyone holding a valid invite token |
 | Sign in | `POST /api/auth/login`, `/logout`, `/forgot`, `/reset`, `GET/PATCH /api/auth/me`, `POST /api/auth/password` | admins |
 | Content | `/api/admin/posts…`, `/api/admin/uploads…`, `/api/admin/sponsor-applications…` | any admin |
-| Accounts and backups | `/api/admin/users…`, `/api/admin/export`, `/api/admin/backup.sqlite`, delete application | **owners** only |
+| Inbox | `GET /api/admin/messages`, `PATCH /api/admin/messages/:id`, `GET /api/admin/inbox/counts` | any admin |
+| Accounts and backups | `/api/admin/users…`, `/api/admin/invites…`, `/api/admin/export`, `/api/admin/backup.sqlite`, delete application or message | **owners** only |
+
+The public site is moving its posts page from `/posts` to `/news`. The API paths stay `/api/posts`.
+
+### Contact messages
+
+`POST /api/messages` takes JSON:
+
+| Field | Rule |
+|---|---|
+| `name` | required, 1–120 characters |
+| `email` | required, valid email (stored lowercase) |
+| `organization` | optional, up to 160 characters |
+| `topic` | one of `Sponsorship`, `Membership`, `Events`, `Press`, `Other` |
+| `message` | required, 10–5000 characters |
+| `website` | honeypot. Leave it empty; real visitors never see it |
+
+Replies: `201 {"ok":true}` when stored. A non-empty `website` also gets `201 {"ok":true}`, but nothing
+is stored. `400 {"error","field"}` when a field fails validation, `429 {"error"}` after 5 messages from
+one IP in 10 minutes, and `413` above 64 KB. When email is on, `NOTIFY_EMAILS` (or every active admin)
+gets an alert with Reply-To set to the sender.
+
+Admin routes (any signed-in officer):
+- `GET /api/admin/messages?status=open|archived|all` (default `open`) returns
+  `{ messages: [{ id, name, email, organization, topic, message, createdAt, readAt, readBy, archivedAt, archivedBy }], unread }`.
+  `readBy` and `archivedBy` are officer display names.
+- `PATCH /api/admin/messages/:id` with `{ read?: boolean, archived?: boolean }` returns `{ message }`.
+  Archiving also marks the message read.
+- `DELETE /api/admin/messages/:id` is **owner-only**.
+- `GET /api/admin/inbox/counts` returns `{ messages, applications }`: unread open messages, and
+  sponsor applications still marked `new`. These feed the nav badge.
+
+### Invite links for officer accounts
+
+Owners can still create an account with a typed password (`POST /api/admin/users`). Invites are the
+other option:
+
+- `POST /api/admin/invites` (owner) with `{ email?, displayName?, role: "admin"|"owner", sendEmail? }`
+  returns `201 { invite, token, url, emailed }`. `url` is `ADMIN_URL?invite=<token>`. The token is
+  random and only its SHA-256 hash is stored, so the link is shown once. It works once and expires
+  after 7 days. With `sendEmail: true`, an email address and SMTP set up, the link is emailed too.
+- `GET /api/admin/invites` (owner) lists pending invites (not used, revoked or expired).
+- `DELETE /api/admin/invites/:id` (owner) revokes one.
+- `POST /api/invites/lookup` with `{ token }` returns `{ invite: { email, displayName, role, expiresAt } }`,
+  or `410` if the link is unknown, used, revoked or expired.
+- `POST /api/invites/accept` with `{ token, username, password, displayName, email, remember? }`
+  creates the account with the invite's role, uses up the token and returns the same
+  `{ token, expiresAt, admin }` as sign-in. A taken username or email returns `409`, and the link
+  still works for another try.
+
+Tokens go in the request body, not the URL path, so they stay out of Railway's request logs. Both
+public invite routes share a limit of 30 requests per IP per 15 minutes.
+
+### Post expiry ("Hide after")
+
+Posts have an optional `expiresAt` (ISO time, or `null`). After it passes, the post drops out of
+`GET /api/posts`, which feeds the News page and the home page. `GET /api/posts/:slug` still returns
+it, so shared links keep working. In `PATCH`, `expiresAt: null` clears it, and leaving it out keeps the
+saved value. It must be later than `publishedAt` when both are sent.
 
 Security notes:
 
@@ -62,10 +123,14 @@ Set these in Railway → service → **Variables**. Never commit real values.
 | `SMTP_HOST`, `SMTP_PORT` | `smtp.gmail.com`, `465` | Optional email. |
 | `SMTP_USER`, `SMTP_PASS` | chapter Gmail and its **App Password** | Turn on 2-Step Verification for the Gmail account, then create an App Password. |
 | `SMTP_FROM` | `IEEE Sooners <ieee.sooner@gmail.com>` | |
-| `NOTIFY_EMAILS` | `president@gmail.com,webmaster@gmail.com` | Who gets sponsor alerts. Blank means every active admin. |
+| `NOTIFY_EMAILS` | `president@gmail.com,webmaster@gmail.com` | Who gets sponsor-application and contact-message alerts. Blank means every active admin. |
 
-Without SMTP the site works the same, except that sponsor alerts are not emailed and "Forgot
-password" tells people to ask an owner, who can reset it from **Admins**.
+Without SMTP the site works the same, except:
+- sponsor and contact alerts aren't emailed (they still appear in the Inbox)
+- invite links have to be copied by hand
+- "Forgot password" tells people to ask an owner, who can reset it from **Admins**
+
+`ADMIN_URL` is also the base of invite links, so it must be the real admin page address.
 
 ## Current deployment
 
@@ -171,6 +236,35 @@ Admin accounts and passwords come back with the database.
 - **Cost:** Railway bills by usage. A service this small idles at very little, but check the
   current plan in the Railway dashboard. The volume is the main ongoing cost.
 
+## Planned: Discord announcements
+
+Not built. It's waiting on permission from the Discord server's admins.
+
+The design:
+- A `DISCORD_WEBHOOK_URL` variable on Railway holds a webhook for the announcements channel. Without
+  it, nothing is sent.
+- The first time a post is published (or a scheduled post goes live), the API sends the webhook a
+  short message: title, summary and a link to the post. It's fire-and-forget, like email: a Discord
+  failure never blocks publishing. Later edits don't post again.
+- The editor gets an opt-out checkbox ("Don't announce on Discord") for posts that shouldn't be
+  announced.
+- Still needed: a decision on how scheduled posts trigger it. The API has no background job today.
+
+## Database migrations
+
+`MIGRATIONS` in `server/src/db.ts` runs on start, in order:
+
+| # | Change |
+|---|---|
+| 1 | Original schema |
+| 2 | `posts.expires_at` ("Hide after") |
+| 3 | `contact_messages` table |
+| 4 | `admin_invites` table |
+
+**The inbox, invite links and post expiry need the Railway API redeployed with these changes.** A
+push to `main` that touches `server/**` does that. Migrations run on their own at startup, and existing
+data is kept. Until the redeploy, the Contact form gets 404s and the admin Inbox shows an error.
+
 ## Changing the API
 
 - The post block schema exists twice and must match: `server/src/posts.ts` (validation) and
@@ -178,4 +272,4 @@ Admin accounts and passwords come back with the database.
 - Add database changes as a **new** entry at the end of `MIGRATIONS` in `server/src/db.ts`. Never
   edit a migration that has already shipped.
 - Run `cd server && npm test` before pushing. The tests cover sign-in, permissions, uploads,
-  validation, rate limits and CORS.
+  validation, rate limits, CORS, contact messages, invites and post expiry.

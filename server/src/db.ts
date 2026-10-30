@@ -101,6 +101,43 @@ const MIGRATIONS: string[] = [
     created_at TEXT NOT NULL
   );
   `,
+  // 2: optional "hide after" time for time-sensitive posts.
+  `
+  ALTER TABLE posts ADD COLUMN expires_at TEXT;
+  `,
+  // 3: contact form messages, shared by every officer.
+  `
+  CREATE TABLE contact_messages (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    organization TEXT NOT NULL DEFAULT '',
+    topic TEXT NOT NULL,
+    message TEXT NOT NULL,
+    read_at TEXT,
+    read_by INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+    archived_at TEXT,
+    archived_by INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX contact_messages_open ON contact_messages(archived_at, created_at);
+  `,
+  // 4: single-use invite links for new officer accounts. Only the token's hash is stored.
+  `
+  CREATE TABLE admin_invites (
+    id INTEGER PRIMARY KEY,
+    token_hash TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL DEFAULT '',
+    display_name TEXT NOT NULL DEFAULT '',
+    role TEXT NOT NULL CHECK (role IN ('owner', 'admin')),
+    created_by INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT,
+    used_by INTEGER REFERENCES admins(id) ON DELETE SET NULL,
+    revoked_at TEXT
+  );
+  `,
 ];
 
 export function openDatabase(dataDir: string): Db {

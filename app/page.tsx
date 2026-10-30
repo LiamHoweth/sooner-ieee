@@ -49,9 +49,9 @@ export default async function Home() {
       <section className="home-hero">
         <img
           className="home-hero-photo"
-          src={photos.stormRadar.image.src}
-          width={photos.stormRadar.image.width}
-          height={photos.stormRadar.image.height}
+          src={photos.campusAerial.image.src}
+          width={photos.campusAerial.image.width}
+          height={photos.campusAerial.image.height}
           alt=""
           fetchPriority="high"
         />
@@ -77,7 +77,7 @@ export default async function Home() {
               </a>
             </div>
           </div>
-          <LogoCoin className="home-hero-coin" />
+          <LogoCoin className="home-hero-coin" caption={false} />
         </div>
 
         <div className="next-up">
@@ -116,6 +116,8 @@ export default async function Home() {
         </div>
       </section>
 
+      <LatestPosts />
+
       <section className="home-events section-pad" aria-labelledby="home-events-title">
         <div className="site-container">
           <div className="section-head" data-reveal>
@@ -150,8 +152,6 @@ export default async function Home() {
           )}
         </div>
       </section>
-
-      <LatestPosts />
 
       <section className="tile-section" aria-labelledby="home-programs-title">
         <div className="site-container">

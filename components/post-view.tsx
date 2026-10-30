@@ -47,9 +47,9 @@ export function PostView() {
 
   const back = (
     <div className="site-container post-back">
-      <a className="text-link" href={sitePath('/posts')}>
+      <a className="text-link" href={sitePath('/news')}>
         <ArrowLeft aria-hidden="true" />
-        All posts
+        All news
       </a>
     </div>
   );
@@ -80,8 +80,8 @@ export function PostView() {
                   : 'Check your connection and refresh, or come back in a minute.'}
               </p>
             </div>
-            <a className="button button-crimson" href={sitePath('/posts')}>
-              See all posts
+            <a className="button button-crimson" href={sitePath('/news')}>
+              See all news
             </a>
           </div>
         )}

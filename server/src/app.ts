@@ -23,11 +23,14 @@ import {
   newToken,
   passwordProblem,
   sha256,
+  startSession,
   verifyPassword,
 } from './auth.js';
 import type { Config } from './config.js';
 import { audit, type Db, now } from './db.js';
+import { createInvite, INVITE_DAYS, inviteSchema, listPendingInvites, pendingInvite, revokeInvite, useInvite } from './invites.js';
 import type { Mailer } from './mail.js';
+import { deleteMessage, listMessages, messageSchema, messageUpdateSchema, saveMessage, unreadMessages, updateMessage } from './messages.js';
 import {
   deletePost,
   getPost,
@@ -60,16 +63,28 @@ const loginSchema = z.object({
   remember: z.boolean().default(false),
 });
 
+const username = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9._-]{3,32}$/, 'Usernames are 3–32 letters, numbers, dots, dashes or underscores');
+
 const newAdminSchema = z.object({
-  username: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .regex(/^[a-z0-9._-]{3,32}$/, 'Usernames are 3–32 letters, numbers, dots, dashes or underscores'),
+  username,
   email: z.string().trim().toLowerCase().email('Use a valid Gmail or email address').max(200),
   displayName: z.string().trim().min(1).max(80),
   role: z.enum(['owner', 'admin']).default('admin'),
   password: z.string(),
+});
+
+const inviteTokenSchema = z.object({ token: z.string().min(20).max(200) });
+
+const acceptInviteSchema = inviteTokenSchema.extend({
+  username,
+  email: z.string().trim().toLowerCase().email('Use a valid Gmail or email address').max(200),
+  displayName: z.string().trim().min(1, 'Add your name').max(80),
+  password: z.string(),
+  remember: z.boolean().default(false),
 });
 
 const adminUpdateSchema = z.object({
@@ -88,22 +103,35 @@ export function createApp({ db, config, mailer }: { db: Db; config: Config; mail
     return fileName ? `${config.publicApiUrl}/uploads/${fileName}` : '';
   };
 
+  // Who hears about new sponsor applications and contact messages.
+  const alertRecipients = () =>
+    config.notifyEmails.length ? config.notifyEmails : listAdmins(db).filter((admin) => !admin.disabled_at).map((admin) => admin.email);
+
   const clientIp = (c: Context) => {
     if (config.trustProxy) {
-      const forwarded = c.req.header('x-forwarded-for')?.split(',')[0]?.trim();
+      // Use the last hop: the address Railway's proxy saw. Earlier entries are client-supplied.
+      const forwarded = c.req.header('x-forwarded-for')?.split(',').at(-1)?.trim();
       if (forwarded) return forwarded;
     }
     const incoming = (c.env as { incoming?: { socket?: { remoteAddress?: string } } } | undefined)?.incoming;
     return incoming?.socket?.remoteAddress ?? 'unknown';
   };
 
-  const parse = async <T extends z.ZodTypeAny>(c: Context, schema: T) => {
-    let body: unknown;
+  const readJson = async (c: Context): Promise<{ body: unknown } | { error: Response }> => {
     try {
-      body = await c.req.json();
+      return { body: await c.req.json() };
     } catch {
-      return { error: c.json({ error: 'Send JSON.' }, 400) } as const;
+      return { error: c.json({ error: 'Send JSON.' }, 400) };
     }
+  };
+
+  const parse = async <T extends z.ZodTypeAny>(c: Context, schema: T) => {
+    const json = await readJson(c);
+    if ('error' in json) return { error: json.error } as const;
+    return validate(c, schema, json.body);
+  };
+
+  const validate = <T extends z.ZodTypeAny>(c: Context, schema: T, body: unknown) => {
     const result = schema.safeParse(body);
     if (!result.success) {
       const issue = result.error.issues[0];
@@ -171,17 +199,39 @@ export function createApp({ db, config, mailer }: { db: Db; config: Config; mail
     const input = parsed.data;
     if (input.fax) return c.json({ ok: true }); // honeypot: pretend success, store nothing
     const id = saveApplication(db, input);
-    const recipients = config.notifyEmails.length
-      ? config.notifyEmails
-      : listAdmins(db).filter((admin) => !admin.disabled_at).map((admin) => admin.email);
     void mailer.send(
-      recipients,
+      alertRecipients(),
       `New sponsor application: ${input.organization}`,
       `${input.contactName} <${input.email}> from ${input.organization} applied to sponsor IEEE Sooners.\n\n` +
         `Interests: ${input.interests.join(', ') || 'not specified'}\nBudget: ${input.budget || 'not specified'}\n` +
         `Timeline: ${input.timeline || 'not specified'}\n\n${input.message}\n\nReview it in the admin area: ${config.adminUrl}`,
+      { replyTo: input.email },
     );
     return c.json({ ok: true, id }, 201);
+  });
+
+  // Contact form. The response never says whether a message was stored, so bots learn nothing.
+  app.post('/api/messages', bodyLimit({ maxSize: 64 * 1024 }), async (c) => {
+    if (!allow(db, `contact:${clientIp(c)}`, 5, 600)) {
+      return c.json({ error: 'Too many messages from this connection. Wait a few minutes, or email ieee@ou.edu.' }, 429);
+    }
+    const json = await readJson(c);
+    if ('error' in json) return json.error;
+    // Honeypot: checked before validation so a bot gets the same answer whatever else it sends.
+    const trap = (json.body as { website?: unknown } | null)?.website;
+    if (typeof trap === 'string' && trap.trim() !== '') return c.json({ ok: true }, 201);
+    const parsed = validate(c, messageSchema, json.body);
+    if ('error' in parsed) return parsed.error;
+    const input = parsed.data;
+    saveMessage(db, input);
+    void mailer.send(
+      alertRecipients(),
+      `New ${input.topic.toLowerCase()} message: ${input.name}`,
+      `${input.name} <${input.email}>${input.organization ? ` from ${input.organization}` : ''} sent a message through the contact form.\n\n` +
+        `Topic: ${input.topic}\n\n${input.message}\n\nReply to this email to answer them, then archive it in the admin inbox: ${config.adminUrl}`,
+      { replyTo: input.email },
+    );
+    return c.json({ ok: true }, 201);
   });
 
   // -------------------------------------------------------------------- auth
@@ -246,6 +296,51 @@ export function createApp({ db, config, mailer }: { db: Db; config: Config; mail
     endAllSessions(db, row.admin_id);
     audit(db, row.admin_id, 'password-reset');
     return c.json({ ok: true });
+  });
+
+  // Invite links. Tokens travel in the body, not the URL, so they stay out of request logs.
+  const inviteGone = (c: Context) => c.json({ error: 'This invite link has expired or was already used. Ask an owner for a new one.' }, 410);
+
+  app.post('/api/invites/lookup', bodyLimit({ maxSize: 8 * 1024 }), async (c) => {
+    if (!allow(db, `invite:${clientIp(c)}`, 30, 900)) return c.json({ error: 'Too many attempts. Wait 15 minutes and try again.' }, 429);
+    const parsed = await parse(c, inviteTokenSchema);
+    if ('error' in parsed) return parsed.error;
+    const invite = pendingInvite(db, parsed.data.token);
+    if (!invite) return inviteGone(c);
+    return c.json({ invite: { email: invite.email, displayName: invite.displayName, role: invite.role, expiresAt: invite.expiresAt } });
+  });
+
+  app.post('/api/invites/accept', bodyLimit({ maxSize: 8 * 1024 }), async (c) => {
+    if (!allow(db, `invite:${clientIp(c)}`, 30, 900)) return c.json({ error: 'Too many attempts. Wait 15 minutes and try again.' }, 429);
+    const parsed = await parse(c, acceptInviteSchema);
+    if ('error' in parsed) return parsed.error;
+    const input = parsed.data;
+    const problem = passwordProblem(input.password);
+    if (problem) return c.json({ error: problem, field: 'password' }, 400);
+    if (!pendingInvite(db, input.token)) return inviteGone(c);
+    const passwordHash = await hashPassword(input.password);
+    // Re-check inside one transaction so two tabs can't both use the same link.
+    db.exec('BEGIN IMMEDIATE');
+    let adminId = 0;
+    try {
+      const invite = pendingInvite(db, input.token);
+      if (!invite) {
+        db.exec('ROLLBACK');
+        return inviteGone(c);
+      }
+      const stamp = now();
+      const result = db
+        .prepare(`INSERT INTO admins (username, email, display_name, role, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+        .run(input.username, input.email, input.displayName, invite.role, passwordHash, stamp, stamp);
+      adminId = Number(result.lastInsertRowid);
+      useInvite(db, invite.id, adminId);
+      audit(db, adminId, 'invite-accepted', input.username);
+      db.exec('COMMIT');
+    } catch {
+      db.exec('ROLLBACK');
+      return c.json({ error: 'That username or email is already in use.' }, 409);
+    }
+    return c.json(startSession(db, adminId, input.remember, c.req.header('user-agent') ?? ''), 201);
   });
 
   // Everything below needs a signed-in admin.
@@ -324,6 +419,7 @@ export function createApp({ db, config, mailer }: { db: Db; config: Config; mail
     }
     const savedId = savePost(db, parsed.data, c.get('admin').id, id);
     if (!savedId) return c.json({ error: 'Post not found.' }, 404);
+    if (typeof savedId === 'object') return c.json(savedId, 400);
     audit(db, c.get('admin').id, id ? 'post-updated' : 'post-created', String(savedId));
     return c.json({ post: serializePost(getPost(db, savedId)!, uploadUrl) }, id ? 200 : 201);
   };
@@ -392,8 +488,81 @@ export function createApp({ db, config, mailer }: { db: Db; config: Config; mail
     return c.json({ ok: true });
   });
 
+  // ---------------------------------------------------------- contact inbox
+  app.get('/api/admin/messages', (c) => {
+    const status = c.req.query('status');
+    const filter = status === 'archived' || status === 'all' ? status : 'open';
+    return c.json({ messages: listMessages(db, filter), unread: unreadMessages(db) });
+  });
+
+  app.patch('/api/admin/messages/:id', async (c) => {
+    const parsed = await parse(c, messageUpdateSchema);
+    if ('error' in parsed) return parsed.error;
+    const updated = updateMessage(db, Number(c.req.param('id')), parsed.data, c.get('admin').id);
+    if (!updated) return c.json({ error: 'Message not found.' }, 404);
+    if (parsed.data.archived !== undefined) audit(db, c.get('admin').id, parsed.data.archived ? 'message-archived' : 'message-reopened', c.req.param('id'));
+    return c.json({ message: updated });
+  });
+
+  app.delete('/api/admin/messages/:id', (c) => {
+    const denied = ownerOnly(c);
+    if (denied) return denied;
+    if (!deleteMessage(db, Number(c.req.param('id')))) return c.json({ error: 'Message not found.' }, 404);
+    audit(db, c.get('admin').id, 'message-deleted', c.req.param('id'));
+    return c.json({ ok: true });
+  });
+
+  // Badge numbers for the dashboard nav: unread open messages and sponsor applications still marked new.
+  app.get('/api/admin/inbox/counts', (c) =>
+    c.json({
+      messages: unreadMessages(db),
+      applications: (db.prepare("SELECT COUNT(*) AS n FROM sponsor_applications WHERE status = 'new'").get() as { n: number }).n,
+    }),
+  );
+
   // ------------------------------------------------------- admin accounts
   app.get('/api/admin/users', (c) => c.json({ admins: listAdmins(db) }));
+
+  app.get('/api/admin/invites', (c) => {
+    const denied = ownerOnly(c);
+    if (denied) return denied;
+    return c.json({ invites: listPendingInvites(db) });
+  });
+
+  app.post('/api/admin/invites', bodyLimit({ maxSize: 8 * 1024 }), async (c) => {
+    const denied = ownerOnly(c);
+    if (denied) return denied;
+    const parsed = await parse(c, inviteSchema);
+    if ('error' in parsed) return parsed.error;
+    const input = parsed.data;
+    const me = c.get('admin');
+    const { token, invite } = createInvite(db, input, me.id);
+    const link = new URL(config.adminUrl);
+    link.searchParams.set('invite', token);
+    const url = link.toString();
+    // Only report emailed when the send actually went through; the link is returned either way.
+    let emailed = false;
+    if (input.sendEmail && input.email && mailer.enabled) {
+      emailed = await mailer
+        .send(
+          [input.email],
+          'Your IEEE Sooners officer account',
+          `Hi${input.displayName ? ` ${input.displayName}` : ''},\n\n${me.display_name} invited you to the IEEE Sooners website admin area.\n` +
+            `Open this link within ${INVITE_DAYS} days to choose your username and password. It works once:\n${url}\n\nIf you weren't expecting this, ignore this email.`,
+        )
+        .catch(() => false);
+    }
+    audit(db, me.id, 'invite-created', input.email || input.displayName || String(invite.id));
+    return c.json({ invite, token, url, emailed }, 201);
+  });
+
+  app.delete('/api/admin/invites/:id', (c) => {
+    const denied = ownerOnly(c);
+    if (denied) return denied;
+    if (!revokeInvite(db, Number(c.req.param('id')))) return c.json({ error: 'Invite not found or already used.' }, 404);
+    audit(db, c.get('admin').id, 'invite-revoked', c.req.param('id'));
+    return c.json({ ok: true });
+  });
 
   app.post('/api/admin/users', async (c) => {
     const denied = ownerOnly(c);
@@ -473,6 +642,7 @@ export function createApp({ db, config, mailer }: { db: Db; config: Config; mail
       admins: listAdmins(db),
       posts: listAll(db).map((row) => serializePost(row, uploadUrl)),
       sponsorApplications: listApplications(db),
+      contactMessages: listMessages(db),
       uploads: listUploads(db).map((row) => ({ ...row, url: `${config.publicApiUrl}/uploads/${row.file_name}` })),
     });
   });

@@ -1,35 +1,41 @@
 'use client';
 
-import { FileText, Handshake, LogOut, UserRound, Users } from 'lucide-react';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { FileText, Inbox, LogOut, UserRound, Users } from 'lucide-react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 import { api, apiConfigured, session } from '@/lib/api';
 
-import { AdminLogin, AdminReset } from './admin-login';
-import { AccountPanel, ApplicationsPanel, PostsPanel, UsersPanel } from './admin-panels';
+import { AdminInviteAccept, AdminLogin, AdminReset } from './admin-login';
+import { AccountPanel, PostsPanel, UsersPanel } from './admin-panels';
+import { InboxPanel } from './inbox-panel';
 import { PostEditor } from './post-editor';
-import type { AdminUser } from './types';
+import type { AdminUser, InboxCounts } from './types';
 
-type Tab = 'posts' | 'applications' | 'users' | 'account';
+type Tab = 'posts' | 'inbox' | 'users' | 'account';
 
 const TABS: { id: Tab; label: string; icon: typeof FileText }[] = [
-  { id: 'posts', label: 'Posts', icon: FileText },
-  { id: 'applications', label: 'Sponsor applications', icon: Handshake },
+  { id: 'posts', label: 'News posts', icon: FileText },
+  { id: 'inbox', label: 'Inbox', icon: Inbox },
   { id: 'users', label: 'Admins', icon: Users },
   { id: 'account', label: 'My account', icon: UserRound },
 ];
 
 const noSubscribe = () => () => {};
 const readResetToken = () => /#reset=([\w-]+)/.exec(window.location.hash)?.[1] ?? '';
+// Invite links look like /admin?invite=<token> (a #invite= hash works too).
+const readInviteToken = () => new URLSearchParams(window.location.search).get('invite') ?? /#invite=([\w-]+)/.exec(window.location.hash)?.[1] ?? '';
 const readHasSession = () => session.get() !== null;
 
 export function AdminApp() {
   // Both are null while prerendering, then read once from the browser.
   const resetToken = useSyncExternalStore(noSubscribe, readResetToken, () => null);
+  const inviteToken = useSyncExternalStore(noSubscribe, readInviteToken, () => null);
   const hasSession = useSyncExternalStore(noSubscribe, readHasSession, () => null);
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [resetDone, setResetDone] = useState(false);
+  const [inviteDone, setInviteDone] = useState(false);
+  const [counts, setCounts] = useState<InboxCounts | null>(null);
   const [tab, setTab] = useState<Tab>('posts');
   const [editing, setEditing] = useState<number | null | undefined>(undefined);
 
@@ -50,12 +56,25 @@ export function AdminApp() {
     };
   }, [hasSession, sessionChecked]);
 
+  // Unread messages + new sponsor applications for the nav badge.
+  const signedInId = admin?.id;
+  const refreshCounts = useCallback(() => {
+    api<InboxCounts>('/api/admin/inbox/counts', { auth: true })
+      .then(setCounts)
+      .catch(() => setCounts(null));
+  }, []);
+  useEffect(() => {
+    if (signedInId !== undefined) refreshCounts();
+  }, [signedInId, refreshCounts]);
+
   const status =
     hasSession === null
       ? 'checking'
       : resetToken && !resetDone
         ? 'reset'
-        : admin
+        : inviteToken && !inviteDone
+          ? 'invite'
+          : admin
           ? 'signed-in'
           : hasSession && !sessionChecked && apiConfigured
             ? 'checking'
@@ -93,9 +112,31 @@ export function AdminApp() {
       />
     );
   }
+  if (status === 'invite' && inviteToken) {
+    const leave = () => {
+      // Drop the token from the address bar so it isn't bookmarked or shared by accident.
+      const url = new URL(window.location.href);
+      url.searchParams.delete('invite');
+      if (url.hash.startsWith('#invite=')) url.hash = '';
+      history.replaceState(null, '', url.pathname + url.search + url.hash);
+      setInviteDone(true);
+    };
+    return (
+      <AdminInviteAccept
+        token={inviteToken}
+        onSignedIn={(next) => {
+          leave();
+          setSessionChecked(true);
+          setAdmin(next);
+        }}
+        onCancel={leave}
+      />
+    );
+  }
   if (!admin) return <AdminLogin onSignedIn={setAdmin} />;
 
   const me = admin;
+  const badge = counts ? counts.messages + counts.applications : 0;
 
   return (
     <div className="admin-shell">
@@ -112,10 +153,17 @@ export function AdminApp() {
             onClick={() => {
               setTab(id);
               setEditing(undefined);
+              refreshCounts();
             }}
           >
             <Icon aria-hidden="true" />
             {label}
+            {id === 'inbox' && badge > 0 && (
+              <span className="admin-nav-badge" title={`${badge} waiting`}>
+                {badge}
+                <span className="admin-visually-hidden"> waiting</span>
+              </span>
+            )}
           </button>
         ))}
         <button type="button" className="admin-nav-signout" onClick={signOut}>
@@ -125,7 +173,7 @@ export function AdminApp() {
       </nav>
       <div className="admin-main">
         {tab === 'posts' && (editing === undefined ? <PostsPanel onEdit={setEditing} /> : <PostEditor key={editing ?? 'new'} postId={editing} onBack={() => setEditing(undefined)} />)}
-        {tab === 'applications' && <ApplicationsPanel isOwner={me.role === 'owner'} />}
+        {tab === 'inbox' && <InboxPanel isOwner={me.role === 'owner'} onChange={refreshCounts} />}
         {tab === 'users' && <UsersPanel me={me} />}
         {tab === 'account' && <AccountPanel me={me} onUpdated={setAdmin} />}
       </div>

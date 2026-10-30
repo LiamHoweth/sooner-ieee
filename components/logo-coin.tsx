@@ -1,21 +1,34 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
-import primary320 from '@/assets/brand/coin/primary-320.webp';
-import primary960 from '@/assets/brand/coin/primary-960.webp';
-import secondary320 from '@/assets/brand/coin/secondary-320.webp';
-import secondary960 from '@/assets/brand/coin/secondary-960.webp';
+import primary320 from '@/assets/brand/faces/primary-320.webp';
+import primary960 from '@/assets/brand/faces/primary-960.webp';
+import secondary320 from '@/assets/brand/faces/secondary-320.webp';
+import secondary960 from '@/assets/brand/faces/secondary-960.webp';
 import { cn } from '@/lib/utils';
 
+// Faces are rendered from the official vector logos by scripts/cut-coin.mjs.
 const FACES = {
-  front: { label: 'Primary mark · IEEE blue', srcSet: `${primary320.src} 320w, ${primary960.src} 960w`, src: primary960.src },
-  back: { label: 'Secondary mark · OU crimson', srcSet: `${secondary320.src} 320w, ${secondary960.src} 960w`, src: secondary960.src },
+  front: { label: 'Primary mark · OU crimson', srcSet: `${primary320.src} 320w, ${primary960.src} 960w`, src: primary960.src },
+  back: { label: 'Secondary mark · IEEE blue', srcSet: `${secondary320.src} 320w, ${secondary960.src} 960w`, src: secondary960.src },
 } as const;
 
-// Stacked discs between the two faces read as the coin's milled rim when it turns edge-on.
-const RIM_LAYERS = 14;
-const FLIP_MS = 1400;
+// The coin's edge is a cylinder of narrow reeded strips; CSS lights each one from
+// its angle and the coin's current rotation.
+const EDGE_STRIPS = 72;
+
+// One toss, a moment after the entrance finishes and the coin is on screen (ms):
+// a short crouch, a gravity arc while it flips end over end, then a damped rock.
+const TOSS_DELAY_MS = 1500;
+const CROUCH_MS = 180;
+const AIR_MS = 1250;
+const SETTLE_MS = 900;
+
+// Spin slows from full speed to this fraction by the catch, so it lands turning gently.
+const LANDING_SPEED = 0.15;
+const WOBBLE_PERIOD_MS = 360;
+const WOBBLE_DECAY_MS = 170;
 
 type Face = keyof typeof FACES;
 
@@ -24,9 +37,18 @@ function faceAt(rotation: number): Face {
   return turn > 90 && turn < 270 ? 'back' : 'front';
 }
 
+// Share of the spin completed at u (0..1) of the flight, for a speed that falls
+// linearly from 1 to LANDING_SPEED.
+function spinProgress(u: number) {
+  const decel = 1 - LANDING_SPEED;
+  return (u - (decel / 2) * u * u) / (1 - decel / 2);
+}
+
 /**
- * The IEEE Sooners primary and secondary logos struck as one 3D challenge coin:
- * blue on the front, crimson on the back. Tap, click, press Enter or drag to flip it.
+ * The IEEE Sooners primary and secondary logos struck as one thick 3D challenge
+ * coin: OU crimson on the front, IEEE blue on the back. It tosses once after it
+ * appears, landing crimson side up, then floats. Under reduced motion it is a
+ * still image.
  */
 export function LogoCoin({
   className,
@@ -37,91 +59,91 @@ export function LogoCoin({
   size?: 'hero' | 'feature';
   caption?: boolean;
 }) {
-  const [rotation, setRotation] = useState(0);
-  const [tossing, setTossing] = useState(false);
-  const [dragging, setDragging] = useState(false);
-  const drag = useRef<{ x: number; start: number; moved: boolean } | null>(null);
-  const tossTimer = useRef<number | undefined>(undefined);
-  const suppressClick = useRef(false);
-  // While a toss is in the air, keep showing the side it left from; the result
-  // is announced only once the coin lands.
-  const [launchFace, setLaunchFace] = useState<Face>('front');
-  const face = tossing ? launchFace : faceAt(rotation);
+  const stage = useRef<HTMLElement>(null);
 
-  useEffect(() => () => window.clearTimeout(tossTimer.current), []);
+  useEffect(() => {
+    const el = stage.current;
+    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  const flip = () => {
-    // A real toss: several full turns, landing on a random side.
-    const lands: Face = Math.random() < 0.5 ? 'front' : 'back';
-    const base = Math.round(rotation / 360) * 360;
-    setLaunchFace(face);
-    setRotation(base + 360 * 3 + (lands === 'back' ? 180 : 0));
-    setTossing(true);
-    window.clearTimeout(tossTimer.current);
-    tossTimer.current = window.setTimeout(() => setTossing(false), FLIP_MS);
-  };
+    let frame = 0;
+    let timer: number | undefined;
 
-  const onPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-    drag.current = { x: event.clientX, start: rotation, moved: false };
-  };
+    const paint = (angle: number, lift: number, wobbleY: number, wobbleZ: number) => {
+      const radians = (angle * Math.PI) / 180;
+      el.style.setProperty('--coin-rotation', `${angle.toFixed(2)}deg`);
+      el.style.setProperty('--coin-lift', lift.toFixed(4));
+      el.style.setProperty('--coin-wobble-y', `${wobbleY.toFixed(2)}deg`);
+      el.style.setProperty('--coin-wobble-z', `${wobbleZ.toFixed(2)}deg`);
+      // Faces darken as they turn edge-on to the viewer.
+      el.style.setProperty('--coin-shade', (1 - Math.abs(Math.cos(radians))).toFixed(3));
+      // The radar rings follow whichever side is facing the viewer.
+      el.dataset.face = faceAt(angle);
+    };
 
-  const onPointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
-    const state = drag.current;
-    if (!state) return;
-    const dx = event.clientX - state.x;
-    if (!state.moved && Math.abs(dx) < 6) return;
-    if (!state.moved) {
-      state.moved = true;
-      setDragging(true);
-      event.currentTarget.setPointerCapture(event.pointerId);
-    }
-    setRotation(state.start + dx * 0.9);
-  };
+    const toss = () => {
+      // Whole turns only, so it always lands primary (crimson) side up.
+      const turns = 3 + Math.floor(Math.random() * 2);
+      const to = 360 * turns;
+      const lean = Math.random() < 0.5 ? -1 : 1;
+      const landingVelocity = (to / AIR_MS) * (LANDING_SPEED / (1 - (1 - LANDING_SPEED) / 2));
+      const wobbleOmega = (2 * Math.PI) / WOBBLE_PERIOD_MS;
+      const start = performance.now();
 
-  const endDrag = () => {
-    const state = drag.current;
-    drag.current = null;
-    if (!state?.moved) return;
-    // The click that follows a drag release should not toss the coin again.
-    suppressClick.current = true;
-    setDragging(false);
-    // Settle on whichever face is closest.
-    setRotation((current) => Math.round(current / 180) * 180);
-  };
+      const step = (now: number) => {
+        const t = now - start;
+        if (t < CROUCH_MS) {
+          paint(0, -0.05 * Math.sin((Math.PI * t) / CROUCH_MS), 0, 0);
+        } else if (t < CROUCH_MS + AIR_MS) {
+          const u = (t - CROUCH_MS) / AIR_MS;
+          const arc = Math.sin(Math.PI * u);
+          paint(to * spinProgress(u), 4 * u * (1 - u), lean * 16 * arc, lean * -7 * arc);
+        } else if (t < CROUCH_MS + AIR_MS + SETTLE_MS) {
+          const s = t - CROUCH_MS - AIR_MS;
+          const damp = Math.exp(-s / WOBBLE_DECAY_MS);
+          const rock = (landingVelocity / wobbleOmega) * damp * Math.sin(wobbleOmega * s);
+          paint(to + rock, -0.05 * damp * Math.sin(wobbleOmega * s), 0, lean * 0.4 * rock);
+        } else {
+          paint(to, 0, 0, 0);
+          return;
+        }
+        frame = requestAnimationFrame(step);
+      };
+      frame = requestAnimationFrame(step);
+    };
 
-  const onClick = () => {
-    if (suppressClick.current) {
-      suppressClick.current = false;
-      return;
-    }
-    flip();
-  };
+    // Toss once, the first time the coin is properly on screen.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        observer.disconnect();
+        timer = window.setTimeout(toss, TOSS_DELAY_MS);
+      },
+      { threshold: 0.6 },
+    );
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
 
   return (
-    <figure className={cn('coin-stage', `coin-stage-${size}`, className)} data-face={face}>
+    <figure ref={stage} className={cn('coin-stage', `coin-stage-${size}`, className)}>
       <div className="coin-radar" aria-hidden="true" />
-      <button
-        type="button"
-        className={cn('coin', tossing && 'is-tossing', dragging && 'is-dragging')}
-        aria-label={`Flip the IEEE Sooners coin. Showing the ${FACES[face].label}.`}
-        onClick={onClick}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-      >
+      <span className="sr-only">
+        The IEEE Sooners challenge coin: the crimson primary mark on one side and the blue secondary mark on the other.
+      </span>
+      <div className="coin" aria-hidden="true">
         <span className="coin-float">
           <span className="coin-enter">
-            <span
-              className="coin-body"
-              style={{ '--coin-rotation': `${rotation}deg` } as React.CSSProperties}
-            >
-              {Array.from({ length: RIM_LAYERS }, (_, index) => (
+            <span className="coin-body">
+              {Array.from({ length: EDGE_STRIPS }, (_, index) => (
                 <span
                   key={index}
-                  className="coin-rim"
-                  style={{ '--rim-index': index } as React.CSSProperties}
+                  className="coin-edge"
+                  style={{ '--edge-angle': `${(index * 360) / EDGE_STRIPS}deg` } as React.CSSProperties}
                 />
               ))}
               <span className="coin-face coin-front">
@@ -133,12 +155,11 @@ export function LogoCoin({
             </span>
           </span>
         </span>
-      </button>
+      </div>
       <span className="coin-shadow" aria-hidden="true" />
       {caption && (
-        <figcaption className="coin-caption">
-          <span aria-live="polite">{FACES[face].label}</span>
-          <span className="coin-hint">Tap or drag to flip</span>
+        <figcaption className="coin-caption" aria-hidden="true">
+          {FACES.front.label}
         </figcaption>
       )}
     </figure>

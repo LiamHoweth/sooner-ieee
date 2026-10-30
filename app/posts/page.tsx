@@ -1,39 +1,36 @@
 import type { Metadata } from 'next';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
-import { PageHero } from '@/components/page-hero';
-import { PostFeed } from '@/components/post-feed';
-import { socialLinks } from '@/lib/chapter-content';
-import { photos } from '@/lib/photos';
+import { NewsRedirect } from '@/components/news-redirect';
+import { sitePath } from '@/lib/site-path';
 
 export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
-  title: 'Posts',
-  description: 'Recaps, opportunities, project updates and announcements from the IEEE Sooners officers.',
+  title: 'News has moved',
+  description: 'Posts from the IEEE Sooners officers now live on the News page.',
+  robots: { index: false },
 };
 
-const instagram = socialLinks.find((link) => link.label === 'Instagram')!;
-
+// Old /posts links land here; the page moved to /news. Not linked from the header or footer.
 export default function PostsPage() {
+  const news = sitePath('/news');
+
   return (
-    <main id="main-content">
-      <PageHero
-        title="Posts"
-        lead="News from the branch, written by the people running it."
-        summary="Event recaps, internship and research opportunities, project updates and chapter announcements."
-        photo={photos.stormRadar}
-      >
-        <a className="button button-light" href={instagram.href} target="_blank" rel="noreferrer">
-          Follow on Instagram
-          <ArrowUpRight aria-hidden="true" />
-        </a>
-      </PageHero>
-      <section className="content-section" aria-label="All posts">
-        <div className="site-container">
-          <PostFeed />
+    <main id="main-content" className="not-found">
+      <NewsRedirect href={news} />
+      <div className="site-container">
+        <div className="not-found-copy">
+          <h1>News has moved</h1>
+          <p>Posts from the officers now live on the News page.</p>
+          <nav className="not-found-links" aria-label="New location">
+            <a href={news}>
+              Go to News
+              <ArrowRight aria-hidden="true" />
+            </a>
+          </nav>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

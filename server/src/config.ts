@@ -66,6 +66,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     bootstrapOwner: owner,
     smtp,
     notifyEmails: list(env.NOTIFY_EMAILS),
+    // Behind Railway's single edge proxy, the client address is the LAST X-Forwarded-For hop
+    // (the one the proxy appended); earlier entries come from the client and can be forged.
     trustProxy: env.TRUST_PROXY !== 'false',
   };
 }

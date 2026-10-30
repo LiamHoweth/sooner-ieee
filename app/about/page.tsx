@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
-import { ArrowUpRight, Mail } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Mail } from 'lucide-react';
 
 import { alternateMarks } from '@/components/chapter-logo';
 import { LogoCoin } from '@/components/logo-coin';
 import { PageHero } from '@/components/page-hero';
-import { achievements, chapter, officers, socialLinks } from '@/lib/chapter-content';
+import { achievements, chapter, officers } from '@/lib/chapter-content';
 import { photos } from '@/lib/photos';
+import { sitePath } from '@/lib/site-path';
 
 export const dynamic = 'force-static';
 
@@ -36,7 +37,7 @@ export default function AboutPage() {
         </a>
       </PageHero>
 
-      <section className="content-section" aria-labelledby="mission-title">
+      <section className="content-section" id="mission" aria-labelledby="mission-title">
         <div className="site-container mission-grid">
           <div className="mission-copy" data-reveal>
             <h2 className="display-title" id="mission-title">
@@ -74,7 +75,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="marks-section" aria-labelledby="marks-title">
+      <section className="marks-section" id="marks" aria-labelledby="marks-title">
         <div className="site-container marks-grid">
           <LogoCoin size="feature" className="marks-coin" />
           <div className="marks-copy" data-reveal>
@@ -84,10 +85,10 @@ export default function AboutPage() {
             <p>
               The IEEE Sooners name and logos were approved for the branch this
               fall. The tornado is Norman’s weather; the arrow is the current
-              rising through it. Blue is the primary mark, crimson the
+              rising through it. Crimson is the primary mark, blue the
               secondary.
             </p>
-            <p className="marks-hint">Flip the coin to see both sides.</p>
+            <p className="marks-hint">Crimson on the front, blue on the back.</p>
             <ul className="alternate-marks" aria-label="Alternate logo colorways">
               {alternateMarks.map((mark) => (
                 <li key={mark.label}>
@@ -100,7 +101,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="content-section leadership-section" aria-labelledby="leadership-title">
+      <section className="content-section leadership-section" id="leadership" aria-labelledby="leadership-title">
         <div className="site-container">
           <div className="section-head" data-reveal>
             <h2 className="display-title" id="leadership-title">
@@ -142,7 +143,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="recognition-section" aria-labelledby="recognition-title">
+      <section className="recognition-section" id="recognition" aria-labelledby="recognition-title">
         <div className="site-container recognition-grid">
           <div data-reveal>
             <h2 className="display-title" id="recognition-title">
@@ -165,22 +166,17 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="content-section channels-section" aria-labelledby="channels-title">
+      <section className="content-section about-contact" id="contact" aria-labelledby="about-contact-title">
         <div className="site-container">
           <div className="section-head" data-reveal>
-            <h2 className="display-title" id="channels-title">
+            <h2 className="display-title" id="about-contact-title">
               Find the chapter
             </h2>
-            <p>Pick the channel that fits how you like to keep up.</p>
-          </div>
-          <div className="channel-grid" data-reveal>
-            {socialLinks.map((link) => (
-              <a key={link.label} className="channel-card" href={link.href} target="_blank" rel="noreferrer">
-                <h3>{link.label}</h3>
-                <p>{link.description}</p>
-                <ArrowUpRight aria-hidden="true" />
-              </a>
-            ))}
+            <p>The message form, chapter email and every channel, from Discord to OU Engage, are on the Contact page.</p>
+            <a className="button button-outline" href={sitePath('/contact')}>
+              Contact the chapter
+              <ArrowRight aria-hidden="true" />
+            </a>
           </div>
         </div>
       </section>

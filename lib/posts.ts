@@ -31,6 +31,8 @@ export type Post = {
   pinned: boolean;
   author: string | null;
   publishedAt: string | null;
+  /** "Hide after": past this time the post drops out of /api/posts lists, but /api/posts/:slug still returns it. */
+  expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -101,6 +103,11 @@ export function videoEmbedUrl(url: string) {
 
 export function isSafeHref(href: string) {
   return /^(https:\/\/|mailto:|\/)/i.test(href);
+}
+
+/** True once a post's "hide after" time has passed. */
+export function isExpired(post: Pick<Post, 'expiresAt'>, at = Date.now()) {
+  return post.expiresAt !== null && Date.parse(post.expiresAt) <= at;
 }
 
 export function formatPostDate(iso: string | null) {

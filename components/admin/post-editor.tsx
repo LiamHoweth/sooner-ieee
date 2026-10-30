@@ -21,6 +21,7 @@ type Draft = {
   pinned: boolean;
   status: 'draft' | 'published';
   publishedAt: string | null;
+  expiresAt: string | null;
 };
 
 const EMPTY: Draft = {
@@ -34,6 +35,7 @@ const EMPTY: Draft = {
   pinned: false,
   status: 'draft',
   publishedAt: null,
+  expiresAt: null,
 };
 
 const ADDABLE: BlockType[] = ['text', 'heading', 'image', 'gallery', 'quote', 'button', 'callout', 'video', 'stats', 'event', 'columns', 'divider'];
@@ -57,6 +59,7 @@ function fromPost(post: Post): Draft {
     pinned: post.pinned,
     status: post.status,
     publishedAt: post.publishedAt,
+    expiresAt: post.expiresAt,
   };
 }
 
@@ -127,6 +130,7 @@ export function PostEditor({ postId, onBack }: { postId: number | null; onBack: 
       pinned: draft.pinned,
       status,
       publishedAt: draft.publishedAt,
+      expiresAt: draft.expiresAt,
     };
     try {
       const { post } = await api<{ post: Post }>(id ? `/api/admin/posts/${id}` : '/api/admin/posts', {
@@ -180,7 +184,7 @@ export function PostEditor({ postId, onBack }: { postId: number | null; onBack: 
           }}
         >
           <ArrowLeft aria-hidden="true" />
-          All posts
+          All news posts
         </button>
         <span className={dirty ? 'admin-pill admin-pill-warn' : 'admin-pill'}>
           {dirty ? 'Unsaved changes' : draft.status === 'published' ? 'Published' : 'Draft'}
@@ -228,7 +232,7 @@ export function PostEditor({ postId, onBack }: { postId: number | null; onBack: 
             />
             <textarea
               className="admin-summary-input"
-              placeholder="One or two sentences shown on the posts page"
+              placeholder="One or two sentences shown on the News page"
               value={draft.summary}
               maxLength={400}
               rows={2}
@@ -349,9 +353,19 @@ export function PostEditor({ postId, onBack }: { postId: number | null; onBack: 
                   onChange={(event) => set('publishedAt', event.target.value ? new Date(event.target.value).toISOString() : null)}
                 />
               </label>
+              <label>
+                <span>Hide after (optional)</span>
+                <input
+                  type="datetime-local"
+                  value={toLocalInput(draft.expiresAt)}
+                  min={toLocalInput(draft.publishedAt)}
+                  onChange={(event) => set('expiresAt', event.target.value ? new Date(event.target.value).toISOString() : null)}
+                />
+                <small>For deadlines and one-day events. Afterwards it leaves the News and home pages, but its link still works.</small>
+              </label>
               <label className="admin-check">
                 <input type="checkbox" checked={draft.pinned} onChange={(event) => set('pinned', event.target.checked)} />
-                <span>Pin to the top of the posts page</span>
+                <span>Pin to the top of the News page</span>
               </label>
             </section>
             {id && (

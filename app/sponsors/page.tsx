@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { ArrowUpRight, Mail } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Mail } from 'lucide-react';
 
 import { PageHero } from '@/components/page-hero';
 import { SponsorApplicationForm } from '@/components/sponsor-application-form';
 import { achievements, chapter, sponsors } from '@/lib/chapter-content';
 import { photos } from '@/lib/photos';
+import { sitePath } from '@/lib/site-path';
 
 export const dynamic = 'force-static';
 
@@ -53,7 +54,7 @@ export default function SponsorsPage() {
         </a>
       </PageHero>
 
-      <section className="content-section" aria-labelledby="why-title">
+      <section className="content-section" id="why" aria-labelledby="why-title">
         <div className="site-container why-grid">
           <div data-reveal>
             <h2 className="display-title" id="why-title">
@@ -85,7 +86,7 @@ export default function SponsorsPage() {
         </div>
       </section>
 
-      <section className="tile-section" aria-labelledby="paths-title">
+      <section className="tile-section" id="paths" aria-labelledby="paths-title">
         <div className="site-container">
           <h2 className="tile-section-title" id="paths-title" data-reveal>
             Ways to partner
@@ -171,6 +172,10 @@ export default function SponsorsPage() {
             <a className="button button-outline-light" href={`mailto:${chapter.email}`}>
               <Mail aria-hidden="true" />
               {chapter.email}
+            </a>
+            <a className="text-link text-link-light" href={sitePath('/contact?topic=Sponsorship')}>
+              Message the officers
+              <ArrowRight aria-hidden="true" />
             </a>
             <a className="text-link text-link-light" href={chapter.donationGuide} target="_blank" rel="noreferrer">
               OU giving instructions

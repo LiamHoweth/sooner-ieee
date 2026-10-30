@@ -39,7 +39,7 @@ export default async function EventsPage() {
         </a>
       </PageHero>
 
-      <section className="content-section" aria-labelledby="upcoming-title">
+      <section className="content-section" id="upcoming" aria-labelledby="upcoming-title">
         <div className="site-container">
           <div className="section-head" data-reveal>
             <h2 className="display-title" id="upcoming-title">Upcoming</h2>
@@ -104,7 +104,7 @@ export default async function EventsPage() {
       </section>
 
       {past.length > 0 && (
-        <section className="content-section past-section" aria-labelledby="past-title">
+        <section className="content-section past-section" id="past" aria-labelledby="past-title">
           <div className="site-container">
             <div className="section-head" data-reveal>
               <h2 className="display-title" id="past-title">Recently</h2>
