@@ -9,7 +9,6 @@ and say where the answer came from.
 - [ ] **Faculty advisor**: removed from the site (2026-10-30) because it wasn't confirmed. Send the current advisor's name and email, and their OK to publish it, to add it back.
 - [ ] **Chapter email** ieee@ou.edu. Is it monitored, and by whom? Contact-form notifications will go there.
 - [ ] **"More than 50 members"** (Sponsors page). This is inferred from the Outstanding *Large* Student Branch award threshold, not from an actual count. Give a real number or remove it.
-- [ ] **Newsletter "biweekly"** (`socialLinks`). Is that the real cadence?
 - [ ] **Programs** listed under "What we do": robotics and build teams, technical workshops, industry connections, ECE Research Connect, professional growth. Are all of these running now?
 - [ ] **"Open to every OU student" / "IEEE membership not required for events."** Is that official chapter policy?
 - [ ] **Discord invite** `discord.gg/uYNjF9tX7D`. Is it a permanent (non-expiring) invite?

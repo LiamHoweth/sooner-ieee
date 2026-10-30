@@ -10,12 +10,11 @@ import { photos } from '@/lib/photos';
 import { sitePath } from '@/lib/site-path';
 
 const discord = socialLinks.find((link) => link.label === 'Discord')!;
-const joinLinks = ['Discord', 'Newsletter', 'OU Engage', 'IEEE Membership'].map(
+const joinLinks = ['Discord', 'OU Engage', 'IEEE Membership'].map(
   (label) => socialLinks.find((link) => link.label === label)!,
 );
 const joinActions: Record<string, string> = {
   Discord: 'Join the server',
-  Newsletter: 'Subscribe',
   'OU Engage': 'Join on Engage',
   'IEEE Membership': 'Explore IEEE',
 };

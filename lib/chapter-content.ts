@@ -64,11 +64,6 @@ export const socialLinks: SocialLink[] = [
     description: 'Chapter news, achievements, and professional connections.',
   },
   {
-    label: 'Newsletter',
-    href: 'http://eepurl.com/jnyi2A',
-    description: 'A biweekly digest of upcoming opportunities.',
-  },
-  {
     label: 'OU Engage',
     href: 'https://oklahoma.campusgroups.com/IEEE/club_signup',
     description: 'Join the registered OU student organization.',
