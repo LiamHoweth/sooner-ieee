@@ -36,11 +36,6 @@ export const chapter = {
   name: 'IEEE Sooners',
   formalName: 'IEEE Student Branch at the University of Oklahoma',
   email: 'ieee@ou.edu',
-  advisor: {
-    name: 'Cliff Fitzmorris',
-    role: 'Faculty Advisor',
-    email: 'cfitzmorris@ou.edu',
-  },
   calendarName: 'OU IEEE Events',
   calendarUrl:
     'https://calendar.google.com/calendar/embed?src=ieee.sooner%40gmail.com&ctz=America%2FChicago',

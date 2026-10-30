@@ -6,7 +6,7 @@ and say where the answer came from.
 
 ## 1. Already on the live site: please confirm
 
-- [ ] **Faculty advisor**: Cliff Fitzmorris, cfitzmorris@ou.edu (`lib/chapter-content.ts`). Still current, and OK to publish his email?
+- [ ] **Faculty advisor**: removed from the site (2026-10-30) because it wasn't confirmed. Send the current advisor's name and email, and their OK to publish it, to add it back.
 - [ ] **Chapter email** ieee@ou.edu. Is it monitored, and by whom? Contact-form notifications will go there.
 - [ ] **"More than 50 members"** (Sponsors page). This is inferred from the Outstanding *Large* Student Branch award threshold, not from an actual count. Give a real number or remove it.
 - [ ] **Newsletter "biweekly"** (`socialLinks`). Is that the real cadence?

@@ -123,14 +123,6 @@ export default function AboutPage() {
                 )}
               </article>
             ))}
-            <article className="person-card">
-              <p className="person-role">{chapter.advisor.role}</p>
-              <h3>{chapter.advisor.name}</h3>
-              <a href={`mailto:${chapter.advisor.email}`}>
-                <Mail aria-hidden="true" />
-                {chapter.advisor.email}
-              </a>
-            </article>
             <article className="person-card person-card-crimson">
               <p className="person-role">Student officers</p>
               <h3>Chapter leadership</h3>

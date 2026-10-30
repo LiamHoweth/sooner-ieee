@@ -57,8 +57,6 @@ export function SiteFooter() {
             <ArrowRight aria-hidden="true" />
           </a>
           <p>
-            {chapter.advisor.role}: {chapter.advisor.name}
-            <br />
             Gallogly College of Engineering
             <br />
             Norman, Oklahoma

@@ -12,7 +12,7 @@ export const dynamic = 'force-static';
 export const metadata: Metadata = {
   title: 'Contact',
   description:
-    'Reach IEEE Sooners: send the student officers a message, email the chapter or its faculty advisor, or find the chapter on Discord, Instagram and LinkedIn.',
+    'Reach IEEE Sooners: send the student officers a message, email the chapter, or find the chapter on Discord, Instagram and LinkedIn.',
 };
 
 // Officer contacts appear only once lib/chapter-content.ts lists real people.
@@ -57,7 +57,7 @@ export default function ContactPage() {
             <h2 className="display-title" id="email-title">
               Email
             </h2>
-            <p>Prefer your own inbox? Write to the chapter or its faculty advisor.</p>
+            <p>Prefer your own inbox? Write to the chapter.</p>
           </div>
           <div className="people-grid" data-reveal>
             <article className="person-card person-card-crimson">
@@ -66,14 +66,6 @@ export default function ContactPage() {
               <a href={`mailto:${chapter.email}`}>
                 <Mail aria-hidden="true" />
                 {chapter.email}
-              </a>
-            </article>
-            <article className="person-card">
-              <p className="person-role">{chapter.advisor.role}</p>
-              <h3>{chapter.advisor.name}</h3>
-              <a href={`mailto:${chapter.advisor.email}`}>
-                <Mail aria-hidden="true" />
-                {chapter.advisor.email}
               </a>
             </article>
             {officerContacts.map((officer) => (
