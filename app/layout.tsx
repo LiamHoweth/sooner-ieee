@@ -33,7 +33,8 @@ const sourceSerif = Source_Serif_4({
 const basePath = process.env.NEXT_PUBLIC_SITE_BASE_PATH ?? '';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://ou-ieee-sooners.liamhoweth.chatgpt.site'),
+  // The site's public address, used for link previews. Update it if the site gets a custom domain.
+  metadataBase: new URL('https://ieee-sooners-web-production.up.railway.app'),
   title: {
     default: 'IEEE Sooners | University of Oklahoma',
     template: '%s | IEEE Sooners',
