@@ -1,0 +1,14 @@
+# Keep LF everywhere (the repo is edited on macOS and Windows). CRLF breaks the Dockerfile,
+# Caddyfile and shell steps in the GitHub workflows.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.tar.gz binary
+*.sqlite binary

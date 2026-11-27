@@ -6,7 +6,7 @@ import { EventList } from '@/components/event-list';
 import { PageHero } from '@/components/page-hero';
 import { getChapterEventFeed } from '@/lib/calendar';
 import { chapter, socialLinks } from '@/lib/chapter-content';
-import { photos } from '@/lib/photos';
+import { chapterPhotos } from '@/lib/photos';
 
 export const dynamic = 'force-static';
 
@@ -31,7 +31,7 @@ export default async function EventsPage() {
         title="Events"
         lead="The next good reason to leave the lab."
         summary="Technical workshops, company conversations, project sessions, and socials. OU students are welcome; IEEE membership is not required."
-        photo={photos.weatherCenter}
+        photo={chapterPhotos.soundWorkshopDemo}
       >
         <a className="button button-light" href="#chapter-calendar">
           <CalendarDays aria-hidden="true" />

@@ -34,8 +34,28 @@ export default defineRailway(() => {
     volumeMounts: { '/data': data },
   });
 
+  // The public website: Vinext prerenders it, Caddy serves it (deploy/web/). Stateless, so
+  // it can redeploy at any time without touching the API or its volume. It needs the
+  // NEXT_PUBLIC_API_URL variable (set in the dashboard, see docs/BACKEND.md) at build time.
+  const web = service('ieee-sooners-web', {
+    source: github('LiamHoweth/sooner-ieee', { branch: 'main' }),
+    build: {
+      builder: 'DOCKERFILE',
+      dockerfilePath: 'deploy/web/Dockerfile',
+      // API-only changes (server/**) don't rebuild the website.
+      watchPatterns: ['/**', '!/server/**'],
+    },
+    deploy: {
+      restartPolicyType: 'ON_FAILURE',
+      restartPolicyMaxRetries: 10,
+    },
+    healthcheck: '/health',
+    healthcheckTimeout: 60,
+    replicas: { sfo: 1 },
+  });
+
   return project('IEEE Sooners', {
     variables: { managed: false },
-    resources: [api, data],
+    resources: [api, data, web],
   });
 });

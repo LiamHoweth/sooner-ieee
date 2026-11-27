@@ -4,7 +4,7 @@ import { ArrowRight, ArrowUpRight, Mail } from 'lucide-react';
 import { PageHero } from '@/components/page-hero';
 import { SponsorApplicationForm } from '@/components/sponsor-application-form';
 import { achievements, chapter, sponsors } from '@/lib/chapter-content';
-import { photos } from '@/lib/photos';
+import { chapterPhotos } from '@/lib/photos';
 import { sitePath } from '@/lib/site-path';
 
 export const dynamic = 'force-static';
@@ -43,7 +43,7 @@ export default function SponsorsPage() {
         title="Sponsors"
         lead="Support the students already leaning in."
         summary="Reach motivated OU engineering students through technical programming, hands-on work, and opportunities with a clear purpose."
-        photo={photos.campusAerial}
+        photo={chapterPhotos.soundWorkshopRoom}
       >
         <a className="button button-light" href="#apply">
           Apply to sponsor
@@ -101,10 +101,11 @@ export default function SponsorsPage() {
             ))}
             <figure className="tile tile-photo">
               <img
-                src={photos.weatherCenter.image.src}
-                width={photos.weatherCenter.image.width}
-                height={photos.weatherCenter.image.height}
-                alt={photos.weatherCenter.alt}
+                src={chapterPhotos.boardGameNight.image.src}
+                width={chapterPhotos.boardGameNight.image.width}
+                height={chapterPhotos.boardGameNight.image.height}
+                alt={chapterPhotos.boardGameNight.alt}
+                style={{ objectPosition: chapterPhotos.boardGameNight.position }}
                 loading="lazy"
               />
             </figure>
@@ -142,9 +143,38 @@ export default function SponsorsPage() {
               Apply to sponsor
             </h2>
             <p className="lead-copy">Tell us what you have in mind. It takes about two minutes.</p>
+            {/* Levels and benefits follow the chapter's sponsorship packet (2025-26). */}
+            <ol className="apply-steps">
+              <li>
+                <strong>Pick a level</strong>
+                Crimson starts at $100, Gold at $1,000 and Diamond at $2,500. Each level includes everything in the
+                one before it. Not sure? Choose “Not sure yet”.
+              </li>
+              <li>
+                <strong>The officers reply</strong>
+                Your application goes straight to the student officers, who email you, usually within a week, to plan
+                the details.
+              </li>
+              <li>
+                <strong>Give through OU</strong>
+                Gifts go through the OU Foundation, a 501(c)(3) nonprofit, so they’re tax-deductible.{' '}
+                <a href={chapter.donationGuide} target="_blank" rel="noreferrer">
+                  OU giving instructions
+                </a>
+                .
+              </li>
+              <li>
+                <strong>We say thank you</strong>
+                Every sponsor is recognized on this website and on our social media. Non-monetary support counts too: we
+                recognize it at the level that matches its estimated value.
+              </li>
+            </ol>
             <p>
-              Applications go straight to the student officers, who reply by email. Prefer to talk first? Email{' '}
-              <a href={`mailto:${chapter.email}`}>{chapter.email}</a>.
+              Prefer to talk first? Email <a href={`mailto:${chapter.email}`}>{chapter.email}</a> or read the{' '}
+              <a href={chapter.sponsorshipPacket} target="_blank" rel="noreferrer">
+                sponsorship packet
+              </a>
+              .
             </p>
           </div>
           <div data-reveal>

@@ -6,7 +6,7 @@ import { LatestPosts } from '@/components/post-feed';
 import { RegionResults } from '@/components/region-results';
 import { getChapterEventFeed } from '@/lib/calendar';
 import { achievements, chapter, programs, socialLinks } from '@/lib/chapter-content';
-import { photos } from '@/lib/photos';
+import { chapterPhotos } from '@/lib/photos';
 import { sitePath } from '@/lib/site-path';
 
 const discord = socialLinks.find((link) => link.label === 'Discord')!;
@@ -48,9 +48,9 @@ export default async function Home() {
       <section className="home-hero">
         <img
           className="home-hero-photo"
-          src={photos.campusAerial.image.src}
-          width={photos.campusAerial.image.width}
-          height={photos.campusAerial.image.height}
+          src={chapterPhotos.gbmGettingInvolved.image.src}
+          width={chapterPhotos.gbmGettingInvolved.image.width}
+          height={chapterPhotos.gbmGettingInvolved.image.height}
           alt=""
           fetchPriority="high"
         />
@@ -172,19 +172,21 @@ export default async function Home() {
             </article>
             <figure className="tile tile-photo">
               <img
-                src={photos.electronicsBench.image.src}
-                width={photos.electronicsBench.image.width}
-                height={photos.electronicsBench.image.height}
-                alt={photos.electronicsBench.alt}
+                src={chapterPhotos.antennaBuild.image.src}
+                width={chapterPhotos.antennaBuild.image.width}
+                height={chapterPhotos.antennaBuild.image.height}
+                alt={chapterPhotos.antennaBuild.alt}
+                style={{ objectPosition: chapterPhotos.antennaBuild.position }}
                 loading="lazy"
               />
             </figure>
             <figure className="tile tile-photo">
               <img
-                src={photos.oscilloscope.image.src}
-                width={photos.oscilloscope.image.width}
-                height={photos.oscilloscope.image.height}
-                alt={photos.oscilloscope.alt}
+                src={chapterPhotos.solderingGbm.image.src}
+                width={chapterPhotos.solderingGbm.image.width}
+                height={chapterPhotos.solderingGbm.image.height}
+                alt={chapterPhotos.solderingGbm.alt}
+                style={{ objectPosition: chapterPhotos.solderingGbm.position }}
                 loading="lazy"
               />
             </figure>
@@ -215,9 +217,9 @@ export default async function Home() {
       <section className="join-section" aria-labelledby="home-join-title">
         <img
           className="join-section-photo"
-          src={photos.bizzellLibrary.image.src}
-          width={photos.bizzellLibrary.image.width}
-          height={photos.bizzellLibrary.image.height}
+          src={chapterPhotos.ledTreeGbm.image.src}
+          width={chapterPhotos.ledTreeGbm.image.width}
+          height={chapterPhotos.ledTreeGbm.image.height}
           alt=""
           loading="lazy"
         />

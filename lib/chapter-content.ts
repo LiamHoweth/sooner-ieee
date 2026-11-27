@@ -1,3 +1,11 @@
+import amenFtirich from '@/assets/photos/officers/amen-ftirich.webp';
+import draydenVo from '@/assets/photos/officers/drayden-vo.webp';
+import hebaAssi from '@/assets/photos/officers/heba-assi.webp';
+import loganTanner from '@/assets/photos/officers/logan-tanner.webp';
+import nathanSchultz from '@/assets/photos/officers/nathan-schultz.webp';
+import swargaRibhu from '@/assets/photos/officers/swarga-ribhu.webp';
+import thawngMung from '@/assets/photos/officers/thawng-mung.webp';
+
 export type SocialLink = {
   label: string;
   href: string;
@@ -7,7 +15,9 @@ export type SocialLink = {
 export type Officer = {
   name: string;
   role: string;
+  major?: string;
   email?: string;
+  /** A 4:5 portrait (`.src` of an imported WebP); without one the tile shows initials. */
   image?: string;
 };
 
@@ -152,7 +162,23 @@ export const achievements: Achievement[] = [
 
 // Add the verified 2026–27 roster here when the chapter supplies it.
 // The UI intentionally omits empty collections instead of shipping placeholders.
-export const officers: Officer[] = [];
+// 2026-27 officers, from the chapter's officer slides (Nov 2026). Portraits are 4:5 crops
+// of the Drive "Officer photoshoot" headshots (Sept 2026), matched to names by Liam; the
+// crops are listed in docs/CONTINUE-HERE.md.
+export const officers: Officer[] = [
+  { name: 'Logan Tanner', role: 'President', major: 'Computer Engineering', image: loganTanner.src },
+  { name: 'Nathan Schultz', role: 'Vice President', major: 'Electrical Engineering', image: nathanSchultz.src },
+  { name: 'Heba Assi', role: 'Secretary', major: 'Computer Engineering', image: hebaAssi.src },
+  { name: 'Drayden Vo', role: 'Treasurer', major: 'Electrical Engineering', image: draydenVo.src },
+  { name: 'Amen Ftirich', role: 'Events Coordinator', major: 'Electrical Engineering', image: amenFtirich.src },
+  { name: 'Thawng Mung', role: 'Recruitment Coordinator', major: 'Mechanical Engineering', image: thawngMung.src },
+  {
+    name: 'Swarga Ribhu',
+    role: 'External Activities Coordinator',
+    major: 'Electrical Engineering',
+    image: swargaRibhu.src,
+  },
+];
 
 // Add current partners only after the chapter supplies approved names and marks.
 export const sponsors: Sponsor[] = [];

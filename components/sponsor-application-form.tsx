@@ -6,24 +6,48 @@ import { useEffect, useRef, useState } from 'react';
 import { api, ApiError, apiConfigured } from '@/lib/api';
 import { chapter } from '@/lib/chapter-content';
 
-const INTERESTS = [
-  { value: 'speaker', label: 'Send a speaker or host a tech talk' },
-  { value: 'workshop', label: 'Run a hands-on workshop' },
-  { value: 'projects', label: 'Fund project materials or a build team' },
-  { value: 'travel', label: 'Support competition travel' },
-  { value: 'events', label: 'Sponsor a chapter event' },
-  { value: 'recruiting', label: 'Recruit interns and new grads' },
-  { value: 'other', label: 'Something else' },
+// Levels and ways to help follow the chapter's sponsorship packet (2025-26). The
+// values must match LEVELS and INTERESTS in server/src/sponsors.ts.
+const LEVELS = [
+  {
+    value: 'crimson',
+    name: 'Crimson',
+    amount: '$100+',
+    benefits: 'Your organization’s name and link on our website, and a thank-you on our social media.',
+  },
+  {
+    value: 'gold',
+    name: 'Gold',
+    amount: '$1,000+',
+    benefits: 'Everything in Crimson, plus your logo on team shirts and event banners, and access to our student resume bank.',
+  },
+  {
+    value: 'diamond',
+    name: 'Diamond',
+    amount: '$2,500+',
+    benefits: 'Everything in Gold, plus premier logo placement on the website, shirts and banners, and priority for future collaborations.',
+  },
+  {
+    value: 'in-kind',
+    name: 'Non-monetary',
+    amount: 'Time, equipment or expertise',
+    benefits: 'Workshops, equipment, software or mentorship. We recognize it at the level that matches its estimated value.',
+  },
+  {
+    value: 'not-sure',
+    name: 'Not sure yet',
+    amount: '',
+    benefits: 'Tell us what you have in mind and the officers will walk you through the options.',
+  },
 ];
 
-const BUDGETS = [
-  { value: '', label: 'Choose one (optional)' },
-  { value: 'under-500', label: 'Under $500' },
-  { value: '500-1000', label: '$500 – $1,000' },
-  { value: '1000-5000', label: '$1,000 – $5,000' },
-  { value: '5000-plus', label: '$5,000+' },
-  { value: 'in-kind', label: 'In-kind (equipment, software, time)' },
-  { value: 'not-sure', label: 'Not sure yet' },
+const INTERESTS = [
+  { value: 'workshop', label: 'Host a workshop or industry event', hint: 'A hands-on session, guest lecture or networking night.' },
+  { value: 'equipment', label: 'Provide equipment or resources', hint: 'Parts, tools or software licenses for projects and competitions.' },
+  { value: 'mentorship', label: 'Mentor students', hint: 'Career advice, internships or a visit to your site.' },
+  { value: 'recruiting', label: 'Recruit at our events', hint: 'Meet members at our events, competitions and workshops.' },
+  { value: 'conference', label: 'Support our conference team', hint: 'Help send our robotics team and competitors to the IEEE Region 5 Conference.' },
+  { value: 'other', label: 'Something else', hint: '' },
 ];
 
 type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'sent' } | { kind: 'error'; message: string; field?: string };
@@ -121,26 +145,34 @@ export function SponsorApplicationForm() {
           </span>
           <input name="website" type="url" maxLength={300} placeholder="https://" autoComplete="url" aria-invalid={invalid('website')} />
         </label>
-        <label>
-          <span>
-            Budget range <small>(optional)</small>
-          </span>
-          <select name="budget" defaultValue="">
-            {BUDGETS.map((budget) => (
-              <option key={budget.value} value={budget.value}>
-                {budget.label}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
 
+      {/* Sent as `budget`, the API's name for the sponsorship level. */}
+      <fieldset className="apply-levels">
+        <legend>Sponsorship level</legend>
+        {LEVELS.map((level, index) => (
+          <label key={level.value}>
+            <input type="radio" name="budget" value={level.value} required={index === 0} />
+            <span className="apply-level-name">
+              {level.name}
+              {level.amount && <span className="apply-level-amount">{level.amount}</span>}
+            </span>
+            <span className="apply-level-benefits">{level.benefits}</span>
+          </label>
+        ))}
+      </fieldset>
+
       <fieldset className="apply-interests">
-        <legend>How would you like to get involved?</legend>
+        <legend>
+          How would you like to get involved? <small>(optional, pick any)</small>
+        </legend>
         {INTERESTS.map((interest) => (
           <label key={interest.value}>
             <input type="checkbox" name="interests" value={interest.value} />
-            <span>{interest.label}</span>
+            <span>
+              {interest.label}
+              {interest.hint && <small className="apply-interest-hint">{interest.hint}</small>}
+            </span>
           </label>
         ))}
       </fieldset>

@@ -50,7 +50,7 @@ The public site is moving its posts page from `/posts` to `/news`. The API paths
 
 Replies: `201 {"ok":true}` when stored. A non-empty `website` also gets `201 {"ok":true}`, but nothing
 is stored. `400 {"error","field"}` when a field fails validation, `429 {"error"}` after 5 messages from
-one IP in 10 minutes, and `413` above 64 KB. When email is on, `NOTIFY_EMAILS` (or every active admin)
+one IP in 10 minutes, and `413` above 64 KB. When email is on, `NOTIFY_EMAILS` (default `ieee@ou.edu`)
 gets an alert with Reply-To set to the sender.
 
 Admin routes (any signed-in officer):
@@ -120,12 +120,49 @@ Set these in Railway → service → **Variables**. Never commit real values.
 | `BOOTSTRAP_OWNER_USERNAME` | `liam` | Creates the first owner **only when no admins exist**. Remove it after the first deploy. |
 | `BOOTSTRAP_OWNER_EMAIL` | `you@gmail.com` | |
 | `BOOTSTRAP_OWNER_PASSWORD_HASH` | `scrypt-v1$…` | From `cd server && npm run hash-password`. |
-| `SMTP_HOST`, `SMTP_PORT` | `smtp.gmail.com`, `465` | Optional email. |
+| `MAIL_RELAY_URL` | `https://script.google.com/macros/s/…/exec` | Email through the Apps Script relay (see **Email** below). Use this on Railway's Hobby plan. |
+| `MAIL_RELAY_SECRET` | 32+ random characters | Must match the script's `SECRET` property. At least 16 characters, or the relay stays off. |
+| `SMTP_HOST`, `SMTP_PORT` | `smtp.gmail.com`, `465` | Optional email over SMTP instead. **Railway blocks SMTP on the Hobby plan** (Pro and up only). |
 | `SMTP_USER`, `SMTP_PASS` | chapter Gmail and its **App Password** | Turn on 2-Step Verification for the Gmail account, then create an App Password. |
 | `SMTP_FROM` | `IEEE Sooners <ieee.sooner@gmail.com>` | |
-| `NOTIFY_EMAILS` | `president@gmail.com,webmaster@gmail.com` | Who gets sponsor-application and contact-message alerts. Blank means every active admin. |
+| `NOTIFY_EMAILS` | `ieee@ou.edu` | Who gets sponsor-application and contact-message alerts, comma-separated. Blank means `ieee@ou.edu`. |
 
-Without SMTP the site works the same, except:
+## Email
+
+Every sponsor application and contact message emails `NOTIFY_EMAILS` (default `ieee@ou.edu`), with
+Reply-To set to the sender, so officers can answer straight from the inbox. The same channel sends
+invite links and password resets.
+
+Railway's Hobby plan blocks SMTP, so the API sends mail over HTTPS to a small Google Apps Script
+(`server/scripts/mail-relay.gs`) that runs under the **chapter Gmail** and sends from it. It's free,
+needs no extra service, and Gmail's own servers keep it out of spam folders. If both the relay and
+SMTP are set, the relay is used.
+
+Set it up once (about 10 minutes), signed in to the chapter Gmail:
+
+1. Make a secret: run `node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"` and
+   keep the output somewhere safe for the next steps (a password manager, not a chat or a file in
+   the repo).
+2. Go to https://script.google.com, click **New project**, name it "IEEE Sooners mail relay", and
+   replace the editor's contents with `server/scripts/mail-relay.gs`.
+3. **Project settings** (gear) → **Script properties** → **Add script property**: name `SECRET`,
+   value: the secret from step 1. Save.
+4. Back in the editor, pick `sendTest` in the function menu and click **Run**. Approve the
+   permission prompt (it asks to send email as you). You should get a test email.
+5. **Deploy** → **New deployment** → type **Web app**. Execute as **Me**, Who has access
+   **Anyone**. Deploy and copy the **Web app URL** (ends in `/exec`).
+6. In Railway → **ieee-sooners-api** → **Variables**, add `MAIL_RELAY_URL` (the URL) and
+   `MAIL_RELAY_SECRET` (the secret). Railway redeploys the API.
+7. Check `GET /api/health` on the API: it now says `"email": true`. Send a test message from the
+   Contact page and confirm it reaches `ieee@ou.edu`.
+
+"Anyone" access is safe: without the secret the script refuses to send, and it sends to at most 10
+addresses per message. Gmail allows about 100 emails a day from a regular account, far more than
+the site uses. To rotate the secret, change it in both places. The script belongs to the chapter
+Gmail, so it moves with that account when the webmaster changes. If you edit the script later,
+use **Deploy → Manage deployments → Edit → New version** so the URL stays the same.
+
+Without email the site works the same, except:
 - sponsor and contact alerts aren't emailed (they still appear in the Inbox)
 - invite links have to be copied by hand
 - "Forgot password" tells people to ask an owner, who can reset it from **Admins**
@@ -143,6 +180,47 @@ Without SMTP the site works the same, except:
 | Website variable | GitHub Actions variable `IEEE_API_URL` = the public URL above |
 
 Pushes to `main` that change `server/**` redeploy the API automatically. Website-only pushes don't.
+
+## Website on Railway (replacing GitHub Pages)
+
+The website can run as a second service in the same Railway project, so the site and API live in
+one place. **Status (2026-11-26): set up in code, not created on Railway yet.** GitHub Pages keeps
+serving the site until the cutover below is finished.
+
+| | |
+|---|---|
+| Service | `ieee-sooners-web`, from GitHub `LiamHoweth/sooner-ieee`, branch `main`, repo root |
+| Build | `deploy/web/Dockerfile`: Node 22 runs `npm ci && npm run build`, then Caddy 2 serves `dist/client` |
+| Server config | `deploy/web/Caddyfile`: `/about` serves `about.html`, unknown paths get `404.html`, hashed `/_next/static` files cache for a year, pages revalidate on every load, `/health` for Railway |
+| Redeploys | Any push to `main` except `server/**` changes (watch patterns in `.railway/railway.ts`) |
+| Variable | `NEXT_PUBLIC_API_URL` = the API's public `https://` address. It's baked in at build time, so changing it needs a redeploy |
+
+A Dockerfile is used instead of Railpack's auto-detection because the root `package.json` has a
+Cloudflare `start` script and a `public/` folder, either of which Railpack could mistake for the app.
+No base path is needed: `next.config.ts` adds `/sooner-ieee` only on GitHub Actions.
+
+**Cutover, in order:**
+
+1. Merge the branch that adds `deploy/web/` into `main`.
+2. From `server/`, run `railway config plan`. It must say `0 to destroy` (expected: create
+   `ieee-sooners-web`, and set the API's `/data` mount guard and restart policy). Then
+   `railway config apply`.
+3. Set the variable and give the service a domain:
+   - `railway variable set 'NEXT_PUBLIC_API_URL=https://${{ieee-sooners-api.RAILWAY_PUBLIC_DOMAIN}}' --service ieee-sooners-web`
+   - `railway domain --service ieee-sooners-web`
+4. On the API, add the new site address to `ALLOWED_ORIGINS` (keep the GitHub Pages origin until
+   Pages is off), and set `SITE_URL` to it and `ADMIN_URL` to `<site>/admin`.
+5. Check every page, `/post?slug=<a real post>`, admin sign-in, an image upload, and the contact and
+   sponsor forms on the new address.
+6. Point `metadataBase` in `app/layout.tsx` at the final address. Then, once a custom domain is
+   chosen, add it to the web service (and an `api.` subdomain to the API) and repeat step 4.
+7. Turn off GitHub Pages (disable `.github/workflows/deploy-pages.yml`) and remove its origin from
+   `ALLOWED_ORIGINS`.
+
+To test the server config locally: `npm run build`, then run `caddy run --config deploy/web/Caddyfile`
+with `SITE_ROOT` set to the absolute path of `dist/client`. The path must contain no spaces, so use a
+symlink if needed. Locally built pages call whatever `.env.local` points at, and the Content Security
+Policy only allows `https://` APIs, so the local `http://localhost:8080` API is blocked there.
 
 ## Infrastructure as code
 

@@ -1,0 +1,17 @@
+# Build context for deploy/web/Dockerfile (the website service).
+# The API in server/ builds separately with Railpack and is not needed here.
+.git
+node_modules
+dist
+.next
+.vinext
+.wrangler
+server
+outputs
+work
+.env*
+!.env.example
+.claude
+.playwright-cli
+.taste-skill
+*.log

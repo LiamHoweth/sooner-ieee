@@ -66,7 +66,7 @@ export function SiteFooter() {
 
       <div className="site-container footer-credits">
         <p>
-          Photographs:{' '}
+          Event photos © IEEE Sooners. Storm photograph:{' '}
           {photoList.map((photo, index) => (
             <span key={photo.credit.page}>
               <a href={photo.credit.page} target="_blank" rel="noreferrer">

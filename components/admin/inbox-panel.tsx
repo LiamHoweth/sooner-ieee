@@ -22,23 +22,30 @@ const STATUS_LABELS: Record<SponsorApplication['status'], string> = {
   declined: 'Declined',
 };
 
-const BUDGET_LABELS: Record<string, string> = {
-  'under-500': 'Under $500',
-  '500-1000': '$500 – $1,000',
-  '1000-5000': '$1,000 – $5,000',
-  '5000-plus': '$5,000+',
-  'in-kind': 'In-kind',
+// Sponsorship levels from the packet, plus the budget ranges older applications used.
+const LEVEL_LABELS: Record<string, string> = {
+  crimson: 'Crimson ($100+)',
+  gold: 'Gold ($1,000+)',
+  diamond: 'Diamond ($2,500+)',
+  'in-kind': 'Non-monetary',
   'not-sure': 'Not sure yet',
+  'under-500': 'Under $500 (old form)',
+  '500-1000': '$500 – $1,000 (old form)',
+  '1000-5000': '$1,000 – $5,000 (old form)',
+  '5000-plus': '$5,000+ (old form)',
 };
 
 const INTEREST_LABELS: Record<string, string> = {
-  speaker: 'Speaker / tech talk',
-  workshop: 'Workshop',
-  projects: 'Project materials',
-  travel: 'Competition travel',
-  events: 'Event sponsor',
-  recruiting: 'Recruiting',
+  workshop: 'Workshop or industry event',
+  equipment: 'Equipment or resources',
+  mentorship: 'Mentorship or internships',
+  recruiting: 'Recruiting at events',
+  conference: 'Region 5 conference team',
   other: 'Other',
+  speaker: 'Speaker / tech talk (old form)',
+  projects: 'Project materials (old form)',
+  travel: 'Competition travel (old form)',
+  events: 'Event sponsor (old form)',
 };
 
 const replyHref = (email: string, subject: string) => `mailto:${email}?subject=${encodeURIComponent(subject)}`;
@@ -363,8 +370,8 @@ function ApplicationItem({
               <dd>{item.interests.map((value) => INTEREST_LABELS[value] ?? value).join(', ') || 'Not specified'}</dd>
             </div>
             <div>
-              <dt>Budget</dt>
-              <dd>{BUDGET_LABELS[item.budget] ?? (item.budget || 'Not specified')}</dd>
+              <dt>Level</dt>
+              <dd>{LEVEL_LABELS[item.budget] ?? (item.budget || 'Not specified')}</dd>
             </div>
             <div>
               <dt>Timing</dt>

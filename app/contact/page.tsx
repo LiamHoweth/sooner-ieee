@@ -4,7 +4,7 @@ import { ArrowRight, ArrowUpRight, Mail } from 'lucide-react';
 import { ContactForm } from '@/components/contact-form';
 import { PageHero } from '@/components/page-hero';
 import { chapter, officers, socialLinks } from '@/lib/chapter-content';
-import { photos } from '@/lib/photos';
+import { chapterPhotos } from '@/lib/photos';
 import { sitePath } from '@/lib/site-path';
 
 export const dynamic = 'force-static';
@@ -25,7 +25,7 @@ export default function ContactPage() {
         title="Contact"
         lead="Questions, ideas and partnerships start here."
         summary="Send the student officers a message, email the chapter, or keep up on the channels members already use."
-        photo={photos.lightningNorman}
+        photo={chapterPhotos.microwaveNight}
       >
         <a className="button button-light" href={`mailto:${chapter.email}`}>
           <Mail aria-hidden="true" />

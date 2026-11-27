@@ -4,7 +4,7 @@ import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { PageHero } from '@/components/page-hero';
 import { RegionResults } from '@/components/region-results';
 import { programs, socialLinks } from '@/lib/chapter-content';
-import { photos } from '@/lib/photos';
+import { chapterPhotos } from '@/lib/photos';
 import { sitePath } from '@/lib/site-path';
 
 export const dynamic = 'force-static';
@@ -22,14 +22,14 @@ const tracks = [
     id: 'build',
     title: 'Build & compete',
     lead: 'Make the theory answer back.',
-    photo: photos.electronicsBench,
+    photo: chapterPhotos.antennaDrill,
     programs: programs.filter((program) => program.category === 'build'),
   },
   {
     id: 'connect',
     title: 'Learn & connect',
     lead: 'Meet the people already doing the work.',
-    photo: photos.campusAerial,
+    photo: chapterPhotos.studyNight,
     programs: programs.filter((program) => program.category === 'connect'),
   },
 ];
@@ -41,7 +41,7 @@ export default function ProjectsPage() {
         title="Projects"
         lead="Engineering happens when the notes close."
         summary="The chapter balances hands-on technical work with the relationships that help students decide where their engineering goes next."
-        photo={photos.oscilloscope}
+        photo={chapterPhotos.antennaGroup}
       >
         <a className="button button-light" href={discord.href} target="_blank" rel="noreferrer">
           Ask what is active
@@ -75,6 +75,7 @@ export default function ProjectsPage() {
                 width={track.photo.image.width}
                 height={track.photo.image.height}
                 alt={track.photo.alt}
+                style={{ objectPosition: track.photo.position }}
                 loading="lazy"
               />
             </figure>

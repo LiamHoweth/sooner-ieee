@@ -1,8 +1,3 @@
-import altBlack from '@/assets/brand/marks/alt-black-256.webp';
-import altBlue from '@/assets/brand/marks/alt-blue-256.webp';
-import altCrimson from '@/assets/brand/marks/alt-crimson-256.webp';
-import altRedOutline from '@/assets/brand/marks/alt-red-outline-256.webp';
-import altRed from '@/assets/brand/marks/alt-red-256.webp';
 import primary320 from '@/assets/brand/marks/primary-320.webp';
 import primary96 from '@/assets/brand/marks/primary-96.webp';
 import secondary320 from '@/assets/brand/marks/secondary-320.webp';
@@ -17,14 +12,6 @@ const marks = {
   primary: { small: primary96, large: primary320 },
   secondary: { small: secondary96, large: secondary320 },
 };
-
-export const alternateMarks = [
-  { image: altCrimson, label: 'Crimson' },
-  { image: altBlue, label: 'Blue' },
-  { image: altRed, label: 'Red' },
-  { image: altBlack, label: 'Black' },
-  { image: altRedOutline, label: 'Red, outlined' },
-];
 
 export function ChapterLogo({
   variant = 'primary',

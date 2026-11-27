@@ -31,6 +31,7 @@ export function PageHero({
             width={photo.image.width}
             height={photo.image.height}
             alt={photo.alt}
+            style={{ objectPosition: photo.position }}
             fetchPriority="high"
           />
           <ChapterLogo className="page-hero-mark" spin />
