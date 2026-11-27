@@ -21,6 +21,7 @@ assistants. The commit history tells the story:
 | Oct 20, 2026 | Added the API on Railway: an officer admin area, news posts, sponsor applications. Railway settings moved into code (`server/.railway/railway.ts`). |
 | Oct 30, 2026 | Added News, the Contact page with a shared officer Inbox, invite links for officer accounts, and a clickable coin. Removed an unconfirmed faculty advisor listing and the newsletter. |
 | Nov 27, 2026 | Prepared a Railway service to host the website itself (not switched on yet). Replaced stock photos with real chapter photos from the officers' Drive. |
+| Nov 27, 2026 | Shipped the work below: the API first (so the new sponsor form never met the old API), then the website. Created the `ieee-sooners-web` Railway service and moved the API's links to it; GitHub Pages stays on until it's turned off. |
 | Late Nov 2026 | Added the 2026–27 officers to the About page as photoshoot portraits (a still row on wide screens, a gliding strip on phones), recropped the About group photo, and made a click flip the coin to its blue side (and back). Rebuilt the sponsor application around the sponsorship packet's levels (form, API and admin inbox), replaced photos of company talks with club-only events, and fixed small phone issues (tap sizes, tiny text). |
 
 Two ideas shaped everything:
@@ -35,7 +36,7 @@ Two ideas shaped everything:
 
 | What | Where it lives | In plain words |
 |---|---|---|
-| The website | `app/` (pages), `components/` (building blocks), `lib/` (data and helpers) | The pages people see. Built with Vinext, a Next.js-style React framework, and published as plain files to GitHub Pages: https://liamhoweth.github.io/sooner-ieee/ |
+| The website | `app/` (pages), `components/` (building blocks), `lib/` (data and helpers) | The pages people see. Built with Vinext, a Next.js-style React framework, into plain files. Served by Railway at https://ieee-sooners-web-production.up.railway.app (GitHub Pages at https://liamhoweth.github.io/sooner-ieee/ runs in parallel until it's turned off). |
 | The API | `server/` → Railway | A small server that stores what officers change while the site is live: news posts, uploaded images, officer accounts, sponsor applications and contact messages. |
 | Email alerts | A Google Apps Script under the chapter Gmail (code in `server/scripts/mail-relay.gs`) | Every sponsor application and contact message emails `ieee@ou.edu`. Railway's Hobby plan blocks normal email (SMTP), so the API hands each email to this script. Setup: [docs/BACKEND.md → Email](docs/BACKEND.md#email). |
 | Events | The chapter's public Google Calendar (`ieee.sooner@gmail.com`) | Pulled in when the site is built and embedded on the Events page. Add events in Google Calendar, not in the code. |
