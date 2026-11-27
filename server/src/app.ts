@@ -103,9 +103,9 @@ export function createApp({ db, config, mailer }: { db: Db; config: Config; mail
     return fileName ? `${config.publicApiUrl}/uploads/${fileName}` : '';
   };
 
-  // Who hears about new sponsor applications and contact messages.
-  const alertRecipients = () =>
-    config.notifyEmails.length ? config.notifyEmails : listAdmins(db).filter((admin) => !admin.disabled_at).map((admin) => admin.email);
+  // Who hears about new sponsor applications and contact messages: NOTIFY_EMAILS, which
+  // defaults to the chapter inbox (ieee@ou.edu).
+  const alertRecipients = () => config.notifyEmails;
 
   const clientIp = (c: Context) => {
     if (config.trustProxy) {
@@ -203,7 +203,7 @@ export function createApp({ db, config, mailer }: { db: Db; config: Config; mail
       alertRecipients(),
       `New sponsor application: ${input.organization}`,
       `${input.contactName} <${input.email}> from ${input.organization} applied to sponsor IEEE Sooners.\n\n` +
-        `Interests: ${input.interests.join(', ') || 'not specified'}\nBudget: ${input.budget || 'not specified'}\n` +
+        `Interests: ${input.interests.join(', ') || 'not specified'}\nLevel: ${input.budget || 'not specified'}\n` +
         `Timeline: ${input.timeline || 'not specified'}\n\n${input.message}\n\nReview it in the admin area: ${config.adminUrl}`,
       { replyTo: input.email },
     );

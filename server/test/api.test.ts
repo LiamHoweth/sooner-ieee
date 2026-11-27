@@ -206,15 +206,36 @@ describe('sponsor applications', () => {
       organization: '=HYPERLINK("x")',
       contactName: 'Pat Engineer',
       email: 'pat@example.com',
-      interests: ['speaker', 'projects'],
-      budget: '1000-5000',
+      interests: ['workshop', 'conference'],
+      budget: 'gold',
       message: 'We would love to host a workshop.',
     });
     assert.equal(res.status, 201, JSON.stringify(res.data));
     const list = await call('GET', '/api/admin/sponsor-applications', undefined, ownerToken);
     assert.equal(list.data.applications.length, 1);
+    assert.equal(list.data.applications[0].budget, 'gold');
+    assert.deepEqual(list.data.applications[0].interests, ['workshop', 'conference']);
     const csv = await call('GET', '/api/admin/sponsor-applications.csv', undefined, ownerToken);
     assert.match(csv.data, /"'=HYPERLINK/);
+  });
+
+  it('still accepts the old form choices and rejects unknown ones', async () => {
+    const legacy = await call('POST', '/api/sponsor-applications', {
+      organization: 'Legacy Co',
+      contactName: 'Old Form',
+      email: 'old@example.com',
+      interests: ['speaker', 'projects'],
+      budget: '1000-5000',
+    });
+    assert.equal(legacy.status, 201, JSON.stringify(legacy.data));
+    const unknown = await call('POST', '/api/sponsor-applications', {
+      organization: 'X Co',
+      contactName: 'Y',
+      email: 'y@example.com',
+      budget: 'platinum',
+    });
+    assert.equal(unknown.status, 400);
+    await call('DELETE', `/api/admin/sponsor-applications/${legacy.data.id}`, undefined, ownerToken);
   });
 
   it('silently drops honeypot submissions and validates input', async () => {

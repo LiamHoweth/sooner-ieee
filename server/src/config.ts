@@ -15,9 +15,14 @@ export type Config = {
   adminUrl: string;
   bootstrapOwner: { username: string; email: string; passwordHash: string } | null;
   smtp: { host: string; port: number; user: string; pass: string; from: string } | null;
+  /** HTTPS mail relay (the Apps Script in server/scripts/mail-relay.gs). Used instead of SMTP when set. */
+  mailRelay: { url: string; secret: string } | null;
   notifyEmails: string[];
   trustProxy: boolean;
 };
+
+/** The chapter's shared inbox: the default address for form alerts. */
+export const CHAPTER_EMAIL = 'ieee@ou.edu';
 
 function list(value: string | undefined) {
   return (value ?? '')
@@ -55,6 +60,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         }
       : null;
 
+  // Railway's Hobby plan blocks SMTP, so production email goes through an HTTPS relay.
+  const relayUrl = env.MAIL_RELAY_URL?.trim() ?? '';
+  const relaySecret = env.MAIL_RELAY_SECRET?.trim() ?? '';
+  const mailRelay = /^https?:\/\//i.test(relayUrl) && relaySecret.length >= 16 ? { url: relayUrl, secret: relaySecret } : null;
+
   return {
     port: Number(env.PORT || 8080),
     production,
@@ -65,7 +75,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     adminUrl: env.ADMIN_URL || `${(env.SITE_URL || 'http://localhost:4317').replace(/\/$/, '')}/admin`,
     bootstrapOwner: owner,
     smtp,
-    notifyEmails: list(env.NOTIFY_EMAILS),
+    mailRelay,
+    // Sponsor-application and contact-message alerts go to the chapter inbox unless overridden.
+    notifyEmails: list(env.NOTIFY_EMAILS || CHAPTER_EMAIL),
     // Behind Railway's single edge proxy, the client address is the LAST X-Forwarded-For hop
     // (the one the proxy appended); earlier entries come from the client and can be forged.
     trustProxy: env.TRUST_PROXY !== 'false',

@@ -2,8 +2,16 @@ import { z } from 'zod';
 
 import { type Db, now } from './db.js';
 
-export const INTERESTS = ['speaker', 'workshop', 'projects', 'travel', 'events', 'recruiting', 'other'] as const;
-export const BUDGETS = ['under-500', '500-1000', '1000-5000', '5000-plus', 'in-kind', 'not-sure'] as const;
+// Choices follow the chapter's sponsorship packet (2025-26). The form offers the
+// current ones; the legacy ones stay valid so older applications and any visitor
+// on a cached copy of the old form still save. Labels live in
+// components/sponsor-application-form.tsx and components/admin/inbox-panel.tsx.
+export const INTERESTS = ['workshop', 'equipment', 'mentorship', 'recruiting', 'conference', 'other'] as const;
+const LEGACY_INTERESTS = ['speaker', 'projects', 'travel', 'events'] as const;
+// Stored in the `budget` column: the packet's levels (Crimson $100+, Gold $1,000+,
+// Diamond $2,500+), non-monetary support, or not sure yet.
+export const LEVELS = ['crimson', 'gold', 'diamond', 'in-kind', 'not-sure'] as const;
+const LEGACY_BUDGETS = ['under-500', '500-1000', '1000-5000', '5000-plus'] as const;
 export const STATUSES = ['new', 'contacted', 'accepted', 'declined'] as const;
 
 export const applicationSchema = z.object({
@@ -17,8 +25,11 @@ export const applicationSchema = z.object({
     .max(300)
     .refine((value) => value === '' || /^https?:\/\//i.test(value), 'Start the website with https://')
     .default(''),
-  interests: z.array(z.enum(INTERESTS)).max(INTERESTS.length).default([]),
-  budget: z.enum(BUDGETS).or(z.literal('')).default(''),
+  interests: z
+    .array(z.enum([...INTERESTS, ...LEGACY_INTERESTS]))
+    .max(INTERESTS.length + LEGACY_INTERESTS.length)
+    .default([]),
+  budget: z.enum([...LEVELS, ...LEGACY_BUDGETS]).or(z.literal('')).default(''),
   timeline: z.string().trim().max(160).default(''),
   message: z.string().trim().max(4000).default(''),
   // Honeypot: real people never see or fill this field.
@@ -121,7 +132,7 @@ function csvCell(value: string) {
 
 export function applicationsCsv(db: Db) {
   const rows = listApplications(db);
-  const header = ['Submitted', 'Status', 'Organization', 'Contact', 'Email', 'Phone', 'Website', 'Interests', 'Budget', 'Timeline', 'Message', 'Notes'];
+  const header = ['Submitted', 'Status', 'Organization', 'Contact', 'Email', 'Phone', 'Website', 'Interests', 'Level', 'Timeline', 'Message', 'Notes'];
   const lines = rows.map((row) =>
     [
       row.createdAt,
