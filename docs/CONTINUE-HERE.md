@@ -61,15 +61,16 @@ public, and the folders hold far more photos than the site uses.
 
 ## Still to do, in order
 
-1. **Review and merge** this branch into `main`. Merging redeploys GitHub Pages with the new photos.
-   CI runs on the PR.
-2. **Create the Railway web service** (needs Liam's go-ahead). Run these from `server/`:
-   - `railway link -p "IEEE Sooners" -e production -s ieee-sooners-api` (links are per machine)
-   - `railway config plan`: it must say `0 to destroy`. Then `railway config apply`.
-   - Then follow steps 3–7 of the cutover in `docs/BACKEND.md`: the `NEXT_PUBLIC_API_URL` variable,
-     a domain, the API's `ALLOWED_ORIGINS`/`SITE_URL`/`ADMIN_URL`, testing, `metadataBase` in
-     `app/layout.tsx`, and turning off Pages.
-   - Liam said to skip the custom domain for now; use the `*.up.railway.app` address.
+1. **Merged: done (2026-11-27).** The API changes went out first (PR #1), then this branch (PR #2).
+2. **Railway web service: done except turning off Pages (2026-11-27).** `ieee-sooners-web` is live
+   at https://ieee-sooners-web-production.up.railway.app with `NEXT_PUBLIC_API_URL` set. The API
+   allows its origin and its `SITE_URL`/`ADMIN_URL` point at it; `metadataBase` follows in the
+   follow-up PR. Every page, the forms and the admin sign-in page were checked on the new address
+   (signing in and uploading an image need Liam's login).
+   - **Left for Liam:** update shared links to the new address, then turn off GitHub Pages
+     (docs/BACKEND.md step 7). No custom domain for now.
+   - **Also left for Liam:** the email relay (docs/BACKEND.md → Email) and a database backup
+     (Admin → My account → Backups).
 3. **Officers: done (2026-11-27).** The 7 officers (names, roles, majors, portraits) are in
    `officers` in `lib/chapter-content.ts` and show in `OfficerStrip` on About → Leadership (a still row on wide screens, gliding below).
    - Portraits are 4:5 crops (640px wide) of the Drive "Officer photoshoot" headshots, in

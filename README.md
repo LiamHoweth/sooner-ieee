@@ -7,7 +7,7 @@ sponsorship, a contact form, and an officer-only admin area.
 
 | Piece | Where it lives | What it does |
 |---|---|---|
-| Website | `app/`, `components/`, `lib/` → GitHub Pages (moving to Railway: `deploy/web/`, see docs/BACKEND.md) | Static site built with Vinext (Next.js-style React). Deploys on every push to `main`. |
+| Website | `app/`, `components/`, `lib/` → Railway (`ieee-sooners-web`, built by `deploy/web/`): https://ieee-sooners-web-production.up.railway.app. GitHub Pages still runs in parallel until it's turned off. | Static site built with Vinext (Next.js-style React). Deploys on every push to `main`. |
 | API | `server/` → Railway | Node service with SQLite on a Railway volume. Stores posts, images, admin accounts and sponsor applications. |
 | Events | Public Google Calendar `ieee.sooner@gmail.com` | Pulled in at build time and embedded on the Events page. |
 

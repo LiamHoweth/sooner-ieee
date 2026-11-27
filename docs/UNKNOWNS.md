@@ -14,7 +14,6 @@ and say where the answer came from.
 - [ ] **Discord invite** `discord.gg/uYNjF9tX7D`. Is it a permanent (non-expiring) invite?
 - [ ] **Sponsorship packet**: the site links one Drive *file*. Your old doc asked for a Drive *folder*. Which link is right, and is the donation-instructions doc current?
 - [ ] **Awards source**: currently a LinkedIn post. OU's news article lists 7 awards from the 2026 Region 5 conference, but the site shows 4. Can the other three (Outstanding Engineering Educator, Outstanding Student Branch Counselor, Individual Member Achievement) be shown with names?
-- [ ] **Link-preview address** (`metadataBase` in `app/layout.tsx`): `ou-ieee-sooners.liamhoweth.chatgpt.site`. Is that domain still used? If not, it should be the GitHub Pages (or final) address.
 
 ## 2. Content to supply (hidden until it exists)
 
@@ -34,6 +33,7 @@ and say where the answer came from.
 - [ ] **Alternate colorway names** on the About page: they were matched to the SVGs by eye (Crimson = #5, Blue = #3, Red = #7, Black = #2, Red outlined = #8). Confirm the names and the mapping.
 - [ ] **Coin caption wording** ("Primary mark · OU crimson" / "Secondary mark · IEEE blue"): approved, or should it say something else?
 - [ ] **Discord announcements** for new posts: waiting on server-admin permission, plus a webhook and the channel to post in. Planned only, not built.
+- [ ] **Turn off GitHub Pages?** The site is live on Railway (https://ieee-sooners-web-production.up.railway.app) and GitHub Pages still runs in parallel. Turning Pages off breaks the old `liamhoweth.github.io/sooner-ieee` link wherever it's shared (bios, posts, OU Engage). Update those links first, then disable `.github/workflows/deploy-pages.yml` and remove its origin from `ALLOWED_ORIGINS` (docs/BACKEND.md, step 7).
 - [ ] **Email on the API**: the code is ready (2026-11-27). Form alerts go to `ieee@ou.edu` once the Apps Script mail relay is set up under the chapter Gmail and its URL and secret are added to Railway (docs/BACKEND.md → Email). Railway's Hobby plan blocks SMTP, which is why it uses the relay. Until then, invite links must be copied by hand and alerts only show in the officer Inbox.
 - [ ] **Discord and scheduled posts**: if a post is scheduled to go live later, should it announce at that moment? The API has no background job yet, so this is undecided.
 - [ ] **Region 5 website competition 2027**: entering or not? The rules aren't published yet; the old guidelines link returns a 404.

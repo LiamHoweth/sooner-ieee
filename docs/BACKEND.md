@@ -176,16 +176,28 @@ Without email the site works the same, except:
 | Railway project | **IEEE Sooners** (workspace "Liam Howeth's Projects") |
 | Service | `ieee-sooners-api`, deployed from GitHub `LiamHoweth/sooner-ieee`, branch `main`, root `/server` |
 | Public URL | https://ieee-sooners-api-production.up.railway.app |
-| Volume | `ieee-sooners-api-volume`, 5 GB, mounted at `/data` |
-| Website variable | GitHub Actions variable `IEEE_API_URL` = the public URL above |
+| Volume | `ieee-sooners-api-volume`, 5 GB, mounted at `/data` (the API refuses to deploy without it) |
+| Website service | `ieee-sooners-web`, from the repo root, at https://ieee-sooners-web-production.up.railway.app |
+| Website variable | `NEXT_PUBLIC_API_URL` on `ieee-sooners-web` (a reference to the API's domain); GitHub Pages builds use the Actions variable `IEEE_API_URL` |
+| API site links | `SITE_URL` and `ADMIN_URL` point at the Railway website (invite links, password resets) |
 
-Pushes to `main` that change `server/**` redeploy the API automatically. Website-only pushes don't.
+Pushes to `main` that change `server/**` redeploy the API automatically (confirmed 2026-11-27: it
+starts building within seconds of a merge). Website-only pushes redeploy `ieee-sooners-web` and,
+while it's still on, GitHub Pages. The `BOOTSTRAP_OWNER_*` variables were removed on 2026-11-27
+after admins existed.
+
+**Railway CLI on Windows:** `railway config plan/apply` can fail with "requires Railway CLI 5.42.1
+or newer" even on a newer CLI. The IaC package re-runs the CLI through the `_` environment variable,
+which Git Bash points at a script Node can't execute. Run it from PowerShell with
+`$env:_ = "<path to>\@railway\cli\bin\railway.exe"` first.
 
 ## Website on Railway (replacing GitHub Pages)
 
-The website can run as a second service in the same Railway project, so the site and API live in
-one place. **Status (2026-11-26): set up in code, not created on Railway yet.** GitHub Pages keeps
-serving the site until the cutover below is finished.
+The website runs as a second service in the same Railway project, so the site and API live in one
+place. **Status (2026-11-27): live at https://ieee-sooners-web-production.up.railway.app.** Steps
+1–6 below are done (no custom domain yet). GitHub Pages is still on in parallel until Liam decides
+to turn it off (step 7), because the old `liamhoweth.github.io/sooner-ieee` link may be shared in
+bios and posts.
 
 | | |
 |---|---|
