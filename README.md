@@ -7,7 +7,7 @@ sponsorship, a contact form, and an officer-only admin area.
 
 | Piece | Where it lives | What it does |
 |---|---|---|
-| Website | `app/`, `components/`, `lib/` → GitHub Pages | Static site built with Vinext (Next.js-style React). Deploys on every push to `main`. |
+| Website | `app/`, `components/`, `lib/` → GitHub Pages (moving to Railway: `deploy/web/`, see docs/BACKEND.md) | Static site built with Vinext (Next.js-style React). Deploys on every push to `main`. |
 | API | `server/` → Railway | Node service with SQLite on a Railway volume. Stores posts, images, admin accounts and sponsor applications. |
 | Events | Public Google Calendar `ieee.sooner@gmail.com` | Pulled in at build time and embedded on the Events page. |
 
@@ -59,5 +59,5 @@ CI runs both on every push and pull request (`.github/workflows/ci.yml`).
 ## Editing content without the admin area
 
 - Officers, sponsors, programs, achievements and links: `lib/chapter-content.ts`
-- Photos and their credits: `lib/photos.ts` and `assets/photos/credits.json`
+- Photos: `lib/photos.ts` (`chapterPhotos` for chapter photos, made with `scripts/prepare-photo.mjs`; the stock photo's credit is in `assets/photos/credits.json`)
 - Logos: `assets/brand/`, cut into coin faces by `scripts/cut-logos.mjs`

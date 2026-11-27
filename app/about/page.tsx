@@ -5,7 +5,7 @@ import { alternateMarks } from '@/components/chapter-logo';
 import { LogoCoin } from '@/components/logo-coin';
 import { PageHero } from '@/components/page-hero';
 import { achievements, chapter, officers } from '@/lib/chapter-content';
-import { photos } from '@/lib/photos';
+import { chapterPhotos } from '@/lib/photos';
 import { sitePath } from '@/lib/site-path';
 
 export const dynamic = 'force-static';
@@ -29,7 +29,7 @@ export default function AboutPage() {
         title="About"
         lead="Global engineering. Local community."
         summary="The University of Oklahoma Student Branch brings IEEE’s professional network to campus through technical work, peer leadership, and direct connections to faculty and industry."
-        photo={photos.bizzellLibrary}
+        photo={chapterPhotos.officers}
       >
         <a className="button button-light" href={`mailto:${chapter.email}`}>
           <Mail aria-hidden="true" />
@@ -57,10 +57,11 @@ export default function AboutPage() {
           </div>
           <figure className="mission-photo" data-reveal>
             <img
-              src={photos.campusAerial.image.src}
-              width={photos.campusAerial.image.width}
-              height={photos.campusAerial.image.height}
-              alt={photos.campusAerial.alt}
+              src={chapterPhotos.ouFlagTeam.image.src}
+              width={chapterPhotos.ouFlagTeam.image.width}
+              height={chapterPhotos.ouFlagTeam.image.height}
+              alt={chapterPhotos.ouFlagTeam.alt}
+              style={{ objectPosition: chapterPhotos.ouFlagTeam.position }}
               loading="lazy"
             />
           </figure>
@@ -146,6 +147,17 @@ export default function AboutPage() {
               View source
               <ArrowUpRight aria-hidden="true" />
             </a>
+            <figure className="recognition-photo">
+              <img
+                src={chapterPhotos.region5Team.image.src}
+                width={chapterPhotos.region5Team.image.width}
+                height={chapterPhotos.region5Team.image.height}
+                alt={chapterPhotos.region5Team.alt}
+                style={{ objectPosition: chapterPhotos.region5Team.position }}
+                loading="lazy"
+              />
+              <figcaption>The OU team at the Region 5 Conference, March 2026.</figcaption>
+            </figure>
           </div>
           <ol className="recognition-list" data-reveal>
             {achievements.map((achievement) => (

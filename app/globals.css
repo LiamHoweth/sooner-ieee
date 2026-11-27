@@ -825,10 +825,10 @@ figure:hover > .chapter-logo-spin,
   color: var(--white);
 }
 
-/* The campus aerial is a dimmed, greyscale texture under the storm ground.
-   The overlay keeps the headline side near-solid storm (white text stays
-   well above WCAG AA on every pixel), lets the towers show faintly in the
-   middle, and puts an IEEE-blue glow behind the coin. */
+/* A packed chapter meeting, in muted colour under the storm ground. The
+   overlay keeps the headline side near-solid storm (white text stays well
+   above WCAG AA on every pixel), lets the crowd show through on the right,
+   and puts an IEEE-blue glow behind the coin. */
 .home-hero-photo {
   position: absolute;
   inset: 0;
@@ -836,9 +836,9 @@ figure:hover > .chapter-logo-spin,
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 62% 30%;
-  filter: grayscale(1) contrast(1.1) brightness(0.8);
-  opacity: 0.6;
+  object-position: 50% 55%;
+  filter: saturate(0.75) contrast(1.05) brightness(0.9);
+  opacity: 0.9;
   pointer-events: none;
 }
 
@@ -849,7 +849,7 @@ figure:hover > .chapter-logo-spin,
   background:
     radial-gradient(ellipse 40% 62% at 79% 46%, rgb(0 98 155 / 34%), transparent 70%),
     radial-gradient(ellipse 55% 45% at 12% 100%, rgb(132 22 23 / 30%), transparent 70%),
-    linear-gradient(90deg, rgb(12 15 20 / 94%) 0%, rgb(12 15 20 / 86%) 38%, rgb(12 15 20 / 52%) 62%, rgb(12 15 20 / 68%) 100%),
+    linear-gradient(90deg, rgb(12 15 20 / 94%) 0%, rgb(12 15 20 / 86%) 38%, rgb(12 15 20 / 40%) 62%, rgb(12 15 20 / 52%) 100%),
     linear-gradient(180deg, rgb(12 15 20 / 40%) 0%, transparent 30%, transparent 70%, rgb(12 15 20 / 70%) 100%);
   content: '';
 }
@@ -2433,6 +2433,24 @@ fieldset.post-filter {
 
 .recognition-grid > div > p {
   margin: 1.25rem 0 2rem;
+  color: var(--charcoal);
+}
+
+.recognition-photo {
+  margin: 2.5rem 0 0;
+}
+
+.recognition-photo img {
+  /* The photo's own 16:9 frame, so the five students at its edges are never cut. */
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  box-shadow: 0.75rem 0.75rem 0 var(--crimson);
+}
+
+.recognition-photo figcaption {
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
   color: var(--charcoal);
 }
 

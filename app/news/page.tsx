@@ -4,7 +4,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { PageHero } from '@/components/page-hero';
 import { PostFeed } from '@/components/post-feed';
 import { socialLinks } from '@/lib/chapter-content';
-import { photos } from '@/lib/photos';
+import { chapterPhotos } from '@/lib/photos';
 
 export const dynamic = 'force-static';
 
@@ -22,7 +22,7 @@ export default function NewsPage() {
         title="News"
         lead="News from the branch, written by the people running it."
         summary="Event recaps, internship and research opportunities, project updates and chapter announcements."
-        photo={photos.stormRadar}
+        photo={chapterPhotos.gbmOfficersPresenting}
       >
         <a className="button button-light" href={instagram.href} target="_blank" rel="noreferrer">
           Follow on Instagram

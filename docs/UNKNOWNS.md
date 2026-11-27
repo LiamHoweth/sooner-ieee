@@ -18,12 +18,12 @@ and say where the answer came from.
 
 ## 2. Content to supply (hidden until it exists)
 
-- [ ] **2026–27 officer roster**: names, roles, @ou.edu emails, and optional headshots, with each officer's OK to publish. Past years too, if you want a by-year view.
+- [ ] **2026–27 officer roster**: names, roles, @ou.edu emails, and optional headshots, with each officer's OK to publish. Past years too, if you want a by-year view. Headshots for 8 officers are in the Drive folder "Officer photoshoot" (Sept 2026) but aren't matched to names. The only roster found is the 2025–26 one in the Dec 2025 sponsorship packet.
 - [ ] **Event-type descriptions**: General Body Meetings, professional events, entertainment events, the Annual Dodgeball Tournament, and local hackathons (which ones?). Include what happens and how often.
-- [ ] **Real chapter photos**, sorted by academic year, with permission from the people in them. Every photo on the site today is openly licensed stock.
+- [ ] **Real chapter photos**: 15 chapter photos from the officers' Drive replaced the stock photos (2026-11-26; see `chapterPhotos` in `lib/photos.ts`). Confirm the chapter is OK with everyone pictured, especially the close-ups (antenna build, soldering, mock interview, microwave night).
 - [ ] **Sponsors**: names, tier names and their order, approved logos, links, and the year each applies to.
 - [ ] **Membership**: requirements to count as a member (OU Engage? dues? attendance?), and whether to list alumni and how.
-- [ ] **Hero graphic**: is the commissioned graphic still coming? The hero uses an openly licensed campus photo until then.
+- [ ] **Hero graphic**: is the commissioned graphic still coming? The hero now uses the 9/8/2026 Getting Involved GBM photo until then.
 
 ## 3. Permissions and decisions
 

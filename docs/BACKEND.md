@@ -144,6 +144,47 @@ Without SMTP the site works the same, except:
 
 Pushes to `main` that change `server/**` redeploy the API automatically. Website-only pushes don't.
 
+## Website on Railway (replacing GitHub Pages)
+
+The website can run as a second service in the same Railway project, so the site and API live in
+one place. **Status (2026-11-26): set up in code, not created on Railway yet.** GitHub Pages keeps
+serving the site until the cutover below is finished.
+
+| | |
+|---|---|
+| Service | `ieee-sooners-web`, from GitHub `LiamHoweth/sooner-ieee`, branch `main`, repo root |
+| Build | `deploy/web/Dockerfile`: Node 22 runs `npm ci && npm run build`, then Caddy 2 serves `dist/client` |
+| Server config | `deploy/web/Caddyfile`: `/about` serves `about.html`, unknown paths get `404.html`, hashed `/_next/static` files cache for a year, pages revalidate on every load, `/health` for Railway |
+| Redeploys | Any push to `main` except `server/**` changes (watch patterns in `.railway/railway.ts`) |
+| Variable | `NEXT_PUBLIC_API_URL` = the API's public `https://` address. It's baked in at build time, so changing it needs a redeploy |
+
+A Dockerfile is used instead of Railpack's auto-detection because the root `package.json` has a
+Cloudflare `start` script and a `public/` folder, either of which Railpack could mistake for the app.
+No base path is needed: `next.config.ts` adds `/sooner-ieee` only on GitHub Actions.
+
+**Cutover, in order:**
+
+1. Merge the branch that adds `deploy/web/` into `main`.
+2. From `server/`, run `railway config plan`. It must say `0 to destroy` (expected: create
+   `ieee-sooners-web`, and set the API's `/data` mount guard and restart policy). Then
+   `railway config apply`.
+3. Set the variable and give the service a domain:
+   - `railway variable set 'NEXT_PUBLIC_API_URL=https://${{ieee-sooners-api.RAILWAY_PUBLIC_DOMAIN}}' --service ieee-sooners-web`
+   - `railway domain --service ieee-sooners-web`
+4. On the API, add the new site address to `ALLOWED_ORIGINS` (keep the GitHub Pages origin until
+   Pages is off), and set `SITE_URL` to it and `ADMIN_URL` to `<site>/admin`.
+5. Check every page, `/post?slug=<a real post>`, admin sign-in, an image upload, and the contact and
+   sponsor forms on the new address.
+6. Point `metadataBase` in `app/layout.tsx` at the final address. Then, once a custom domain is
+   chosen, add it to the web service (and an `api.` subdomain to the API) and repeat step 4.
+7. Turn off GitHub Pages (disable `.github/workflows/deploy-pages.yml`) and remove its origin from
+   `ALLOWED_ORIGINS`.
+
+To test the server config locally: `npm run build`, then run `caddy run --config deploy/web/Caddyfile`
+with `SITE_ROOT` set to the absolute path of `dist/client`. The path must contain no spaces, so use a
+symlink if needed. Locally built pages call whatever `.env.local` points at, and the Content Security
+Policy only allows `https://` APIs, so the local `http://localhost:8080` API is blocked there.
+
 ## Infrastructure as code
 
 The service's settings live in **`server/.railway/railway.ts`**, using Railway Infrastructure as

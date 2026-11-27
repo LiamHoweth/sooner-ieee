@@ -4,7 +4,7 @@ import { ArrowRight, ArrowUpRight, Mail } from 'lucide-react';
 import { PageHero } from '@/components/page-hero';
 import { SponsorApplicationForm } from '@/components/sponsor-application-form';
 import { achievements, chapter, sponsors } from '@/lib/chapter-content';
-import { photos } from '@/lib/photos';
+import { chapterPhotos } from '@/lib/photos';
 import { sitePath } from '@/lib/site-path';
 
 export const dynamic = 'force-static';
@@ -43,7 +43,7 @@ export default function SponsorsPage() {
         title="Sponsors"
         lead="Support the students already leaning in."
         summary="Reach motivated OU engineering students through technical programming, hands-on work, and opportunities with a clear purpose."
-        photo={photos.campusAerial}
+        photo={chapterPhotos.lumenTalk}
       >
         <a className="button button-light" href="#apply">
           Apply to sponsor
@@ -101,10 +101,11 @@ export default function SponsorsPage() {
             ))}
             <figure className="tile tile-photo">
               <img
-                src={photos.weatherCenter.image.src}
-                width={photos.weatherCenter.image.width}
-                height={photos.weatherCenter.image.height}
-                alt={photos.weatherCenter.alt}
+                src={chapterPhotos.niTalk.image.src}
+                width={chapterPhotos.niTalk.image.width}
+                height={chapterPhotos.niTalk.image.height}
+                alt={chapterPhotos.niTalk.alt}
+                style={{ objectPosition: chapterPhotos.niTalk.position }}
                 loading="lazy"
               />
             </figure>

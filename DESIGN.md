@@ -79,10 +79,22 @@ Neighbouring sections alternate grounds (white → fog → crimson → storm) in
 
 ## 4. Photography
 
-Openly licensed pictures of the chapter's world only (campus, Norman storms, lab equipment), listed
-in `lib/photos.ts` and `assets/photos/credits.json`. They are credited in the footer. Never present a
-found photo as chapter members or a chapter event. Replace them with the chapter's own photos when
-they exist, and keep the credits in sync.
+Real chapter photos first. `chapterPhotos` in `lib/photos.ts` holds the branch's own event photos
+(`assets/photos/chapter/`), picked from the officers' shared Drive and published with the chapter's OK.
+Prefer the most recent year and the fullest rooms; hands-on building and packed meetings beat posed
+shots. To add one, run `node scripts/prepare-photo.mjs <original> assets/photos/chapter/<event-year>.webp`
+(it rotates, resizes to 1600px and strips all metadata, including GPS location), then add it with
+specific alt text naming the event and month. Chapter photos need no credit line.
+
+Crops change with the screen. Page heroes are always 4:3, so pre-crop those to 4:3 with the
+script's crop argument. Tiles and the Projects photos run from about 0.8:1 to 1.66:1 depending on
+width, and full-bleed bands from 0.4:1 on phones to 2.8:1 on wide screens. For those, prefer
+landscape photos and set `position` in `lib/photos.ts` so faces stay in frame. Check every slot at
+phone, tablet and desktop widths before shipping a new photo.
+
+The only remaining stock photo is the NOAA lightning picture behind the Region 5 band, kept for the
+storm identity. It is listed in `photos` and `assets/photos/credits.json` and credited in the footer.
+Never present a found photo as chapter members or a chapter event, and keep the credits in sync.
 
 ## 5. Motion
 
