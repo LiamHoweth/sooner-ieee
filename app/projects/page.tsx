@@ -29,7 +29,7 @@ const tracks = [
     id: 'connect',
     title: 'Learn & connect',
     lead: 'Meet the people already doing the work.',
-    photo: chapterPhotos.tiMockInterview,
+    photo: chapterPhotos.studyNight,
     programs: programs.filter((program) => program.category === 'connect'),
   },
 ];

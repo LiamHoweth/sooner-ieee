@@ -31,7 +31,7 @@ export default async function EventsPage() {
         title="Events"
         lead="The next good reason to leave the lab."
         summary="Technical workshops, company conversations, project sessions, and socials. OU students are welcome; IEEE membership is not required."
-        photo={chapterPhotos.williamsTalk}
+        photo={chapterPhotos.soundWorkshopDemo}
       >
         <a className="button button-light" href="#chapter-calendar">
           <CalendarDays aria-hidden="true" />

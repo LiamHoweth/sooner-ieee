@@ -1,18 +1,18 @@
 import antennaBuild from '@/assets/photos/chapter/antenna-build-2026.webp';
 import antennaDrill from '@/assets/photos/chapter/antenna-drill-2026.webp';
 import antennaGroup from '@/assets/photos/chapter/antenna-group-2026.webp';
+import boardGameNight from '@/assets/photos/chapter/board-game-night-2026.webp';
 import gbmGettingInvolved from '@/assets/photos/chapter/gbm-getting-involved-2026.webp';
 import gbmOfficersPresenting from '@/assets/photos/chapter/gbm-officers-presenting-2026.webp';
 import ledTreeGbm from '@/assets/photos/chapter/led-tree-gbm-2026.webp';
-import lumenTalk from '@/assets/photos/chapter/lumen-talk-2026.webp';
 import microwaveNight from '@/assets/photos/chapter/microwave-night-2026.webp';
-import niTalk from '@/assets/photos/chapter/ni-talk-2026.webp';
 import officers from '@/assets/photos/chapter/officers-2026.webp';
 import ouFlagTeam from '@/assets/photos/chapter/ou-flag-team-2024.webp';
 import region5Team from '@/assets/photos/chapter/region5-team-2026.webp';
 import solderingGbm from '@/assets/photos/chapter/soldering-gbm-2025.webp';
-import tiMockInterview from '@/assets/photos/chapter/ti-mock-interview-2026.webp';
-import williamsTalk from '@/assets/photos/chapter/williams-talk-2026.webp';
+import soundWorkshopDemo from '@/assets/photos/chapter/sound-workshop-demo-2026.webp';
+import soundWorkshopRoom from '@/assets/photos/chapter/sound-workshop-room-2026.webp';
+import studyNight from '@/assets/photos/chapter/study-night-2026.webp';
 import lightningNorman from '@/assets/photos/lightning-norman.webp';
 
 export type PhotoCredit = { title: string; creator: string; license: string; licenseUrl: string; page: string };
@@ -68,25 +68,6 @@ export const chapterPhotos = photoSet({
     image: ledTreeGbm,
     alt: 'Members building LED Christmas trees at round tables during the November 2026 general meeting',
   },
-  williamsTalk: {
-    image: williamsTalk,
-    alt: 'A full lecture hall of students at the October 2026 Williams speaker event',
-  },
-  lumenTalk: {
-    image: lumenTalk,
-    alt: 'Dozens of students pose with the speakers after the Lumen Technologies tech talk, March 2026',
-  },
-  tiMockInterview: {
-    image: tiMockInterview,
-    alt: 'A visiting engineer runs a one-on-one mock interview with a student at the Texas Instruments career prep event, September 2026',
-    position: '50% 45%',
-  },
-  niTalk: {
-    image: niTalk,
-    alt: 'Members stand with the NI speaker after the “Engineering Your Future” talk, November 2026',
-    // Wide tiles trim the empty wall above them, not their feet.
-    position: '50% 80%',
-  },
   microwaveNight: {
     image: microwaveNight,
     alt: 'Two members grinning beside the microwave at the October 2026 “Stuff in a Microwave” night',
@@ -94,7 +75,8 @@ export const chapterPhotos = photoSet({
   officers: {
     image: officers,
     alt: 'The 2026–27 IEEE Sooners officers in an OU electrical and computer engineering lab',
-    // Pre-cropped to the 4:3 page-hero frame (less ceiling): crop 0.162,0.15,0.756,0.85.
+    // Pre-cropped to the 4:3 page-hero frame, tight on the group (no ceiling or empty bench).
+    // From _DSC3656.JPG: crop 0.162,0.217,0.624,0.702, 1320px wide.
   },
   ouFlagTeam: {
     image: ouFlagTeam,
@@ -103,6 +85,30 @@ export const chapterPhotos = photoSet({
   region5Team: {
     image: region5Team,
     alt: 'OU students in crimson shirts with their competition robot at the 2026 IEEE Region 5 Conference',
+  },
+  // Club-only replacements (Nov 2026) for the slots that showed company speakers or
+  // company events; the site shows only the chapter's own events.
+  soundWorkshopRoom: {
+    image: soundWorkshopRoom,
+    alt: 'A packed room of students at tables during the October 2026 “Build Your Own Sound” general meeting',
+    // Pre-cropped to the 4:3 page-hero frame. From IMG_8568.JPG: crop 0.04,0.2,0.8,0.8.
+  },
+  soundWorkshopDemo: {
+    image: soundWorkshopDemo,
+    alt: 'Members presenting a breadboard circuit on screen to a room of students at the October 2026 “Build Your Own Sound” general meeting',
+    // Pre-cropped to the 4:3 page-hero frame. From 20261014_184520.jpg: crop 0.02,0.05,0.9,0.9.
+  },
+  boardGameNight: {
+    image: boardGameNight,
+    alt: 'Members sharing pizza along a long table at the September 2026 board game night',
+    // 4:3 from a tall shot (20260903_192816.jpg: crop 0,0.38,1,0.5625); wide tiles keep the faces.
+    position: '50% 35%',
+  },
+  studyNight: {
+    image: studyNight,
+    alt: 'Members studying together on laptops at the October 2026 IEEE Sooners study night',
+    // 4:3 from a tall shot (20261001_193210.jpg: crop 0,0.4,1,0.5625); wide tiles keep the faces.
+    position: '50% 40%',
   },
 });
 

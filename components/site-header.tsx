@@ -38,7 +38,6 @@ export const navigation: NavItem[] = [
     label: 'About',
     sections: [
       { href: '/about#mission', label: 'Why we exist' },
-      { href: '/about#marks', label: 'Our official marks' },
       { href: '/about#leadership', label: 'Leadership' },
       { href: '/about#recognition', label: 'Recognition' },
     ],

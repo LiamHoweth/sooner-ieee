@@ -324,6 +324,13 @@ svg {
   gap: 1.75rem;
 }
 
+/* Links fill the bar's height so they're easy to tap on a phone. */
+.utility-inner nav a {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+}
+
 .utility-inner a:hover {
   color: var(--white);
   text-decoration: underline;
@@ -617,12 +624,6 @@ figure:hover > .chapter-logo-spin,
 .coin:focus-visible {
   outline: 3px solid var(--white);
   outline-offset: 10px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .coin {
-    cursor: default;
-  }
 }
 
 .coin-float,
@@ -1697,6 +1698,11 @@ fieldset.post-filter {
   padding-block: clamp(3.5rem, 6vw, 5.5rem);
 }
 
+/* Follows "Why we exist" on the same white ground; one section gap between them, not two. */
+.leadership-section {
+  padding-top: 0;
+}
+
 .about-contact .section-head {
   margin-bottom: 0;
 }
@@ -1711,6 +1717,10 @@ fieldset.post-filter {
 }
 
 .footer-signin {
+  /* Taller tap area without moving the footer's layout. */
+  display: inline-block;
+  padding-block: 0.5rem;
+  margin-block: -0.5rem;
   color: rgb(230 230 230 / 70%);
   font-weight: 600;
   text-decoration: underline;
@@ -2286,71 +2296,6 @@ fieldset.post-filter {
   color: var(--charcoal);
 }
 
-.marks-section {
-  position: relative;
-  overflow: hidden;
-  padding-block: var(--section);
-  background:
-    radial-gradient(circle at 25% 50%, rgb(0 98 155 / 22%), transparent 55%),
-    var(--storm);
-  color: var(--white);
-}
-
-.marks-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(3rem, 6vw, 6rem);
-}
-
-.marks-copy .display-title {
-  color: var(--white);
-}
-
-.marks-copy > p {
-  max-width: 34rem;
-  margin-top: 1.5rem;
-  color: rgb(255 255 255 / 90%);
-}
-
-.marks-copy .marks-hint {
-  font-family: var(--font-ui);
-  font-size: var(--fs-small);
-  font-weight: 700;
-  color: var(--cream);
-}
-
-.alternate-marks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.25rem;
-  margin: 2.5rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.alternate-marks li {
-  display: grid;
-  justify-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-ui);
-  font-size: var(--fs-small);
-  font-weight: 600;
-  color: rgb(255 255 255 / 85%);
-}
-
-.alternate-marks img {
-  width: 5.5rem;
-  height: 5.5rem;
-  border-radius: 50%;
-  box-shadow: 0 10px 22px rgb(0 0 0 / 45%);
-  transition: transform 700ms var(--ease-out);
-}
-
-.alternate-marks li:hover img {
-  transform: perspective(500px) rotateY(360deg);
-}
-
 .people-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
@@ -2364,14 +2309,6 @@ fieldset.post-filter {
   padding: 2rem;
   border-left: 6px solid var(--crimson);
   background: var(--fog);
-}
-
-.person-card img {
-  width: 5rem;
-  height: 5rem;
-  margin-bottom: 0.5rem;
-  border-radius: 50%;
-  object-fit: cover;
 }
 
 .person-role {
@@ -2417,6 +2354,183 @@ fieldset.post-filter {
 
 .person-card-crimson .person-role {
   color: var(--cream);
+}
+
+/* Officer strip (About → Leadership): portraits glide right to left in an endless
+   loop. The track holds two identical halves and slides by exactly one half, so
+   the restart is invisible. Tiles use margins, not gap, to keep the halves equal. */
+.officer-strip {
+  --tile: clamp(10.5rem, 8rem + 8vw, 15rem);
+  --tile-gap: clamp(0.75rem, 1.5vw, 1.25rem);
+}
+
+.officer-strip-viewport {
+  overflow: hidden;
+}
+
+.officer-strip-track {
+  display: flex;
+  width: max-content;
+  animation: officer-glide var(--strip-duration, 60s) linear infinite;
+}
+
+.officer-strip-list,
+.officer-strip-clones {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Hover and focus pause only the photos, so the Play button can restart them. */
+.officer-strip-viewport:hover .officer-strip-track,
+.officer-strip-viewport:focus-within .officer-strip-track,
+.officer-strip[data-paused] .officer-strip-track {
+  animation-play-state: paused;
+}
+
+@keyframes officer-glide {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.officer-tile {
+  flex: 0 0 var(--tile);
+  width: var(--tile);
+  margin-inline-end: var(--tile-gap);
+}
+
+/* Full-colour portraits on a crimson base rule. (A crimson wash was tried and dropped:
+   over the bright lab backgrounds it turns pink, not crimson. Black-and-white with
+   colour on hover was tried too; Liam preferred plain colour.) */
+.officer-tile-photo {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-bottom: 5px solid var(--crimson);
+  background: var(--storm);
+}
+
+.officer-tile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.officer-tile-initials {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 2rem + 4vw, 5rem);
+  font-weight: 800;
+  color: var(--cream);
+}
+
+.officer-tile[data-tint='0'] .officer-tile-photo:has(.officer-tile-initials) {
+  background: var(--crimson);
+}
+
+.officer-tile-name {
+  margin-top: 0.9rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 1.25rem + 0.7vw, 1.875rem);
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.officer-tile .person-role {
+  margin-top: 0.4rem;
+}
+
+.officer-tile-major {
+  margin-top: 0.25rem;
+  font-size: var(--fs-small);
+  color: var(--gray);
+}
+
+.officer-tile a,
+.officer-strip-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+  overflow-wrap: anywhere;
+}
+
+.officer-tile a svg,
+.officer-strip-contact svg {
+  width: 1rem;
+  flex-shrink: 0;
+}
+
+.officer-strip-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  margin-top: 1.75rem;
+}
+
+.officer-strip-contact {
+  margin-top: 0;
+}
+
+.officer-strip-toggle {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--line);
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 180ms ease;
+}
+
+.officer-strip-toggle:hover {
+  border-color: var(--crimson);
+}
+
+.officer-strip-toggle svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Reduced motion: a still row that scrolls sideways, starting at the page margin. */
+@media (prefers-reduced-motion: reduce) {
+  .officer-strip-track {
+    animation: none !important;
+  }
+
+  .officer-strip-viewport {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    padding-inline: var(--gutter);
+  }
+
+  .officer-strip-clones,
+  .officer-strip-toggle {
+    display: none;
+  }
+
+  .officer-tile {
+    scroll-snap-align: start;
+  }
 }
 
 .recognition-section {
@@ -3419,6 +3533,7 @@ fieldset.post-filter {
 
 .apply-form small,
 .admin-form small {
+  font-size: 0.8125rem;
   font-weight: 500;
   color: var(--gray);
 }
@@ -3489,12 +3604,143 @@ fieldset.post-filter {
 }
 
 .apply-interests input,
+.apply-levels input,
 .admin-check input {
   width: 1.15rem;
   height: 1.15rem;
+  min-height: 0;
   margin-top: 0.15rem;
+  padding: 0;
   accent-color: var(--crimson);
   flex-shrink: 0;
+}
+
+.apply-interest-hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: var(--fs-small);
+  line-height: 1.35;
+}
+
+/* Sponsorship levels from the packet: one card per level, the chosen one ruled crimson. */
+.apply-levels {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.apply-levels legend {
+  margin-bottom: 0.6rem;
+}
+
+/* Radio on the left; name and benefits stacked on the right. The text sits directly
+   in the label so assistive tech (and the a11y lint) reads it as the radio's name. */
+.apply-levels label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.25rem 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 2px solid transparent;
+  border-left: 6px solid var(--line);
+  background: var(--fog);
+  cursor: pointer;
+  transition: border-color 160ms ease;
+}
+
+.apply-levels label:hover {
+  border-left-color: var(--crimson);
+}
+
+.apply-levels label:has(input:checked) {
+  border-color: var(--crimson);
+  background: var(--white);
+}
+
+.apply-levels label:has(input:focus-visible) {
+  outline: 3px solid rgb(132 22 23 / 25%);
+}
+
+.apply-levels input {
+  grid-row: span 2;
+}
+
+.apply-levels .apply-level-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.6rem;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.apply-level-amount {
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: var(--crimson);
+}
+
+.apply-levels .apply-level-benefits {
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--charcoal);
+}
+
+/* "How it works" steps beside the form. */
+.apply-steps {
+  display: grid;
+  gap: 0.9rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: apply-step;
+}
+
+.apply-steps li {
+  position: relative;
+  padding-left: 2.6rem;
+  color: var(--charcoal);
+  counter-increment: apply-step;
+}
+
+.apply-steps li::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  width: 1.85rem;
+  height: 1.85rem;
+  place-items: center;
+  background: var(--crimson);
+  color: var(--white);
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 800;
+  content: counter(apply-step);
+}
+
+.apply-steps strong {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.apply-intro .apply-steps a {
+  font-weight: 600;
+}
+
+.apply-intro .apply-steps + p {
+  margin-top: 1.5rem;
+  color: var(--charcoal);
 }
 
 .apply-trap {
@@ -4983,7 +5229,6 @@ fieldset.post-filter {
   .storm-grid,
   .track-grid,
   .mission-grid,
-  .marks-grid,
   .recognition-grid,
   .why-grid,
   .calendar-grid,
@@ -5088,10 +5333,6 @@ fieldset.post-filter {
   .manifesto-grid,
   .fact-grid {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .marks-coin {
-    order: 2;
   }
 
   .not-found-grid {

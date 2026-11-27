@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import primary320 from '@/assets/brand/faces/primary-320.webp';
 import primary960 from '@/assets/brand/faces/primary-960.webp';
@@ -49,8 +49,9 @@ function spinProgress(u: number) {
 /**
  * The IEEE Sooners primary and secondary logos struck as one thick 3D challenge
  * coin: OU crimson on the front, IEEE blue on the back. It tosses once after it
- * appears, landing crimson side up, then floats. A click or tap tosses it again.
- * Under reduced motion it is a still image.
+ * appears, landing crimson side up, then floats on that side. A click or tap tosses
+ * it onto the other face (crimson → blue → crimson). Under reduced motion it is a
+ * still image, and a click swaps the face without animating.
  */
 export function LogoCoin({
   className,
@@ -65,10 +66,28 @@ export function LogoCoin({
 }) {
   const stage = useRef<HTMLElement>(null);
   const tossRef = useRef<(() => void) | null>(null);
+  // The face resting up, for the caption. The coin itself is painted directly.
+  const [restFace, setRestFace] = useState<Face>('front');
 
   useEffect(() => {
     const el = stage.current;
-    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!el) return;
+
+    // Resting angle: 0 shows crimson, 180 shows blue (always a multiple of 180).
+    let rest = 0;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      // No toss: a click just turns the still coin over.
+      tossRef.current = () => {
+        rest = rest === 0 ? 180 : 0;
+        el.style.setProperty('--coin-rotation', `${rest}deg`);
+        el.dataset.face = faceAt(rest);
+        setRestFace(faceAt(rest));
+      };
+      return () => {
+        tossRef.current = null;
+      };
+    }
 
     let frame = 0;
     let timer: number | undefined;
@@ -101,36 +120,42 @@ export function LogoCoin({
       el.style.setProperty('--coin-rise', `${Math.max(0, Math.min(size * 0.42, room)).toFixed(1)}px`);
     };
 
-    const toss = () => {
+    // `flip`: land on the other face (a click). Otherwise land on the same face (the
+    // automatic toss), which keeps the coin crimson when nobody touches it.
+    const toss = (flip: boolean) => {
       const now = performance.now();
       if (now < readyAt) return;
       readyAt = now + CROUCH_MS + AIR_MS + SETTLE_MS + CLICK_COOLDOWN_MS;
       window.clearTimeout(timer);
       observer.disconnect();
       fitRise();
-      // Whole turns only, so it always lands primary (crimson) side up.
-      const turns = 3 + Math.floor(Math.random() * 2);
-      const to = 360 * turns;
+      // Whole turns keep the face; an extra half turn swaps it. Start from the face
+      // that is up now, so the coin never jumps before it leaves the ground.
+      const from = rest;
+      const spin = 360 * (3 + Math.floor(Math.random() * 2)) + (flip ? 180 : 0);
+      const to = from + spin;
       const lean = Math.random() < 0.5 ? -1 : 1;
-      const landingVelocity = (to / AIR_MS) * (LANDING_SPEED / (1 - (1 - LANDING_SPEED) / 2));
+      const landingVelocity = (spin / AIR_MS) * (LANDING_SPEED / (1 - (1 - LANDING_SPEED) / 2));
       const wobbleOmega = (2 * Math.PI) / WOBBLE_PERIOD_MS;
       const start = now;
+      rest = to % 360;
 
       const step = (now: number) => {
         const t = now - start;
         if (t < CROUCH_MS) {
-          paint(0, -0.05 * Math.sin((Math.PI * t) / CROUCH_MS), 0, 0);
+          paint(from, -0.05 * Math.sin((Math.PI * t) / CROUCH_MS), 0, 0);
         } else if (t < CROUCH_MS + AIR_MS) {
           const u = (t - CROUCH_MS) / AIR_MS;
           const arc = Math.sin(Math.PI * u);
-          paint(to * spinProgress(u), 4 * u * (1 - u), lean * 16 * arc, lean * -7 * arc);
+          paint(from + spin * spinProgress(u), 4 * u * (1 - u), lean * 16 * arc, lean * -7 * arc);
         } else if (t < CROUCH_MS + AIR_MS + SETTLE_MS) {
           const s = t - CROUCH_MS - AIR_MS;
           const damp = Math.exp(-s / WOBBLE_DECAY_MS);
           const rock = (landingVelocity / wobbleOmega) * damp * Math.sin(wobbleOmega * s);
           paint(to + rock, -0.05 * damp * Math.sin(wobbleOmega * s), 0, lean * 0.4 * rock);
         } else {
-          paint(to, 0, 0, 0);
+          paint(rest, 0, 0, 0);
+          setRestFace(faceAt(rest));
           return;
         }
         frame = requestAnimationFrame(step);
@@ -143,12 +168,12 @@ export function LogoCoin({
       ([entry]) => {
         if (!entry.isIntersecting) return;
         observer.disconnect();
-        timer = window.setTimeout(toss, TOSS_DELAY_MS);
+        timer = window.setTimeout(() => toss(false), TOSS_DELAY_MS);
       },
       { threshold: 0.6 },
     );
     observer.observe(el);
-    tossRef.current = toss;
+    tossRef.current = () => toss(true);
 
     return () => {
       tossRef.current = null;
@@ -188,7 +213,7 @@ export function LogoCoin({
       <span className="coin-shadow" aria-hidden="true" />
       {caption && (
         <figcaption className="coin-caption" aria-hidden="true">
-          {FACES.front.label}
+          {FACES[restFace].label}
         </figcaption>
       )}
     </figure>

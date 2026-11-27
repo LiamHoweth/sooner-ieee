@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { ArrowRight, ArrowUpRight, Mail } from 'lucide-react';
 
-import { alternateMarks } from '@/components/chapter-logo';
-import { LogoCoin } from '@/components/logo-coin';
+import { OfficerStrip } from '@/components/officer-strip';
 import { PageHero } from '@/components/page-hero';
 import { achievements, chapter, officers } from '@/lib/chapter-content';
 import { chapterPhotos } from '@/lib/photos';
@@ -13,7 +12,7 @@ export const dynamic = 'force-static';
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'Meet IEEE Sooners: the IEEE Student Branch at the University of Oklahoma, its leadership, official logos, and how to reach the chapter.',
+    'Meet IEEE Sooners: the IEEE Student Branch at the University of Oklahoma, its leadership, recognition, and how to reach the chapter.',
 };
 
 const facts = [
@@ -76,32 +75,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="marks-section" id="marks" aria-labelledby="marks-title">
-        <div className="site-container marks-grid">
-          <LogoCoin size="feature" className="marks-coin" />
-          <div className="marks-copy" data-reveal>
-            <h2 className="display-title" id="marks-title">
-              Our official marks
-            </h2>
-            <p>
-              The IEEE Sooners name and logos were approved for the branch this
-              fall. The tornado is Norman’s weather; the arrow is the current
-              rising through it. Crimson is the primary mark, blue the
-              secondary.
-            </p>
-            <p className="marks-hint">Crimson on the front, blue on the back.</p>
-            <ul className="alternate-marks" aria-label="Alternate logo colorways">
-              {alternateMarks.map((mark) => (
-                <li key={mark.label}>
-                  <img src={mark.image.src} width={128} height={128} alt="" loading="lazy" />
-                  <span>{mark.label}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
       <section className="content-section leadership-section" id="leadership" aria-labelledby="leadership-title">
         <div className="site-container">
           <div className="section-head" data-reveal>
@@ -110,30 +83,23 @@ export default function AboutPage() {
             </h2>
             <p>A direct line to the people running the branch.</p>
           </div>
-          <div className="people-grid" data-reveal>
-            {officers.map((officer) => (
-              <article className="person-card" key={`${officer.role}-${officer.name}`}>
-                {officer.image && <img src={officer.image} alt="" loading="lazy" />}
-                <p className="person-role">{officer.role}</p>
-                <h3>{officer.name}</h3>
-                {officer.email && (
-                  <a href={`mailto:${officer.email}`}>
-                    <Mail aria-hidden="true" />
-                    {officer.email}
-                  </a>
-                )}
-              </article>
-            ))}
-            <article className="person-card person-card-crimson">
-              <p className="person-role">Student officers</p>
-              <h3>Chapter leadership</h3>
-              <a href={`mailto:${chapter.email}`}>
-                <Mail aria-hidden="true" />
-                {chapter.email}
-              </a>
-            </article>
-          </div>
         </div>
+        {officers.length > 0 ? (
+          <OfficerStrip officers={officers} contactEmail={chapter.email} />
+        ) : (
+          <div className="site-container">
+            <div className="people-grid" data-reveal>
+              <article className="person-card person-card-crimson">
+                <p className="person-role">Student officers</p>
+                <h3>Chapter leadership</h3>
+                <a href={`mailto:${chapter.email}`}>
+                  <Mail aria-hidden="true" />
+                  {chapter.email}
+                </a>
+              </article>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="recognition-section" id="recognition" aria-labelledby="recognition-title">
