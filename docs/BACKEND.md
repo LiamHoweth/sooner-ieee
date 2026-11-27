@@ -204,7 +204,7 @@ bios and posts.
 | Service | `ieee-sooners-web`, from GitHub `LiamHoweth/sooner-ieee`, branch `main`, repo root |
 | Build | `deploy/web/Dockerfile`: Node 22 runs `npm ci && npm run build`, then Caddy 2 serves `dist/client` |
 | Server config | `deploy/web/Caddyfile`: `/about` serves `about.html`, unknown paths get `404.html`, hashed `/_next/static` files cache for a year, pages revalidate on every load, `/health` for Railway |
-| Redeploys | Any push to `main` except `server/**` changes (watch patterns in `.railway/railway.ts`) |
+| Redeploys | Every push to `main` (no watch patterns). A `['/**', '!/server/**']` rule made Railway skip merged PRs that changed the site, so it was removed on 2026-11-27 |
 | Variable | `NEXT_PUBLIC_API_URL` = the API's public `https://` address. It's baked in at build time, so changing it needs a redeploy |
 
 A Dockerfile is used instead of Railpack's auto-detection because the root `package.json` has a
@@ -252,7 +252,8 @@ To change a setting, edit the file and run these from `server/`:
 railway config plan
 ```
 
-Read the plan. **It must say `0 to destroy`.** Never apply a plan that detaches or removes
+Read the plan. **It must say `0 to destroy`.** Railway doesn't report the API's `requiredMountPath` back, so every plan
+shows `deploy.requiredMountPath (null → "/data")` as a change; that line is harmless. Never apply a plan that detaches or removes
 `ieee-sooners-api-volume`: that is every post, image and admin account.
 
 ```bash

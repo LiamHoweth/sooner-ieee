@@ -42,8 +42,10 @@ export default defineRailway(() => {
     build: {
       builder: 'DOCKERFILE',
       dockerfilePath: 'deploy/web/Dockerfile',
-      // API-only changes (server/**) don't rebuild the website.
-      watchPatterns: ['/**', '!/server/**'],
+      // Rebuild on every push to main. A rule of ['/**', '!/server/**'] made Railway skip merged
+      // pull requests that changed the site ("No changes to watched files", 2026-11-27), so the
+      // site went stale. An extra rebuild after API-only changes is cheap; a stale site isn't.
+      watchPatterns: [],
     },
     deploy: {
       restartPolicyType: 'ON_FAILURE',
