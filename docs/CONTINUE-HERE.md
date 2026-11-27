@@ -40,15 +40,19 @@ Railway API still run from `main`. Delete this file once every item below is don
 | Home Build tile 1 | antenna-build-2026 | 2026-27 / 11/11 Antenna Building · 20261111_185756.jpg |
 | Home Build tile 2 | soldering-gbm-2025 | 2025-26 / September GBM: Mini Football Launcher · IMG_6686.HEIC |
 | Home "Take the next step" band | led-tree-gbm-2026 | 2026-27 / 11/17 IEEE GBM: LED Christmas Tree · IMG_2784.HEIC |
-| About hero | officers-2026 | Officer photoshoot · _DSC3656.JPG (crop 0.162,0.15,0.756,0.85) |
+| About hero | officers-2026 | Officer photoshoot · _DSC3656.JPG (crop 0.162,0.217,0.624,0.702, width 1320) |
 | About "Why we exist" | ou-flag-team-2024 | 2024-25 / Pictures · IMG_0303.HEIC |
 | About Recognition | region5-team-2026 | 2025-26 / 2026 IEEE R5 Awards Recap · 20260328_080626.jpg |
-| Events hero | williams-talk-2026 | 2026-27 / 10/29 Williams Speaker Event · IMG_2362.HEIC |
+| Events hero | sound-workshop-demo-2026 | 2026-27 / 10/14 Build Your Own Sound / Pics · 20261014_184520.jpg (crop 0.02,0.05,0.9,0.9) |
 | Projects hero | antenna-group-2026 | 2026-27 / 11/11 Antenna Building · IMG_5650.jpg |
 | Projects "Build & compete" | antenna-drill-2026 | 2026-27 / 11/11 Antenna Building · 20261111_185832.jpg |
-| Projects "Learn & connect" | ti-mock-interview-2026 | 2026-27 / 9/16 Texas Instruments' Career Prep · IMG_1291.HEIC |
-| Sponsors hero | lumen-talk-2026 | 2025-26 / Lumen Tech Talk · IMG_0953.JPG (brightness 1.14) |
-| Sponsors "Ways to partner" tile | ni-talk-2026 | 2026-27 / 11/18 NI - Engineering Your Future · IMG_1997.heic |
+| Projects "Learn & connect" | study-night-2026 | 2026-27 / 10/1 Study Night / Pics · 20261001_193210.jpg (crop 0,0.4,1,0.5625) |
+| Sponsors hero | sound-workshop-room-2026 | 2026-27 / 10/14 Build Your Own Sound / Pics · IMG_8568.JPG (crop 0.04,0.2,0.8,0.8) |
+| Sponsors "Ways to partner" tile | board-game-night-2026 | 2026-27 / 9/3 Board Game Night / Pics · 20260903_192816.jpg (crop 0,0.38,1,0.5625) |
+
+Club-only rule (2026-11-27): no photos of company representatives, company talks or company
+branding, since those companies never agreed to be shown and may not be sponsors now. The Lumen,
+NI, Williams and Texas Instruments photos were replaced with the three club events above.
 | News hero | gbm-officers-presenting-2026 | 2026-27 / 9/8 IEEE GBM: Getting Involved · 20260908_185855.jpg |
 | Contact hero | microwave-night-2026 | 2026-27 / 10/15 Stuff in a Microwave · DSC00271.ARW |
 
@@ -66,18 +70,30 @@ public, and the folders hold far more photos than the site uses.
      a domain, the API's `ALLOWED_ORIGINS`/`SITE_URL`/`ADMIN_URL`, testing, `metadataBase` in
      `app/layout.tsx`, and turning off Pages.
    - Liam said to skip the custom domain for now; use the `*.up.railway.app` address.
-3. **Officers (blocked on the chapter):** the 2026-27 roster isn't written down anywhere in the repo,
-   Drive or email.
-   - The only roster found is 2025-26, in "IEEE Sponsorship Packet 2025-26.pdf" (Dec 2025).
-   - The Drive folder "Officer photoshoot" (Sept 2026) has headshots of 8 officers: _DSC3622, 3624,
-     3627, 3632, 3637 (better take than 3636), 3640, 3652 and 3654 (better than 3655). The "Unused"
-     subfolder only holds rejected takes.
-   - Once names and roles arrive:
-     - Make square face crops with `prepare-photo.mjs`. `.person-card img` is a 5rem circle, so
-       about 600px is plenty.
-     - Add them to `officers` in `lib/chapter-content.ts`. `Officer.image` is a string, so import the
-       webp and pass `.src`.
-   - Never guess names from faces.
+3. **Officers: done (2026-11-27).** The 7 officers (names, roles, majors, portraits) are in
+   `officers` in `lib/chapter-content.ts` and show in `OfficerStrip` on About → Leadership (a still row on wide screens, gliding below).
+   - Portraits are 4:5 crops (640px wide) of the Drive "Officer photoshoot" headshots, in
+     `assets/photos/officers/`. Liam matched file numbers to names; never match faces yourself.
+     _DSC3654 isn't a 2026-27 officer and isn't used.
+
+     | Officer | File | Crop (x,y,w,h) |
+     |---|---|---|
+     | Logan Tanner | _DSC3637 | 0.1740,0.3821,0.6262,0.5222 |
+     | Nathan Schultz | _DSC3624 | 0.1626,0.3629,0.6163,0.5140 |
+     | Heba Assi | _DSC3652 | 0.2378,0.3632,0.5128,0.4276 |
+     | Drayden Vo | _DSC3627 | 0.2417,0.4021,0.5423,0.4523 |
+     | Amen Ftirich | _DSC3632 | 0.0954,0.2723,0.7741,0.6456 |
+     | Thawng Mung | _DSC3622 | 0.1547,0.3044,0.6508,0.5428 |
+     | Swarga Ribhu | _DSC3640 | 0.0693,0.3684,0.6952,0.5798 |
+
+   - The headshots are shared by link, so originals download with
+     `curl -L -o <file> "https://drive.usercontent.google.com/download?id=<fileId>&export=download"`.
+     (The Drive connector returns files as base64 text, which truncates 4–5 MB JPGs.) Keep
+     originals outside the repo: they carry GPS EXIF.
+   - Each year: `node scripts/prepare-photo.mjs <original> assets/photos/officers/<first-last>.webp 640 <x,y,w,h>`,
+     import it in `lib/chapter-content.ts`, set `image: <import>.src`, and delete last year's files.
+   - The officer slides also list class, hometown and interests. They're left off on purpose; ask
+     before adding any of it.
 4. **Confirm with the chapter**:
    - That everyone pictured is OK being on the site (see `docs/UNKNOWNS.md`).
    - Whether to replace "More than 50 members" on Sponsors with the packet's **96 active members**

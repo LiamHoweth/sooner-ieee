@@ -94,7 +94,9 @@ webmaster has set up email, the officers on the alert list also get an email for
 3. Click **Archive** once it's handled. **Move to Open** brings it back.
 
 **Sponsor applications**
-1. Open one to see the contact details and what they're interested in.
+1. Open one to see the contact details, the sponsorship level they picked (Crimson $100+, Gold
+   $1,000+, Diamond $2,500+, non-monetary, or not sure yet, as in the sponsorship packet) and how
+   they'd like to help. Applications sent before Nov 2026 show a budget range marked "(old form)".
 2. Reply by email, then set the status to **Contacted**.
 3. Use **Officer notes** for anything the next person should know. Notes are private.
 4. Mark it **Accepted** or **Declined** when it's decided. It moves to Archived.

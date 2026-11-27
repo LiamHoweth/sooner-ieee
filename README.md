@@ -3,7 +3,7 @@
 The website of the IEEE Student Branch at the University of Oklahoma: news, events, projects,
 sponsorship, a contact form, and an officer-only admin area.
 
-**Future webmaster: start with [docs/HANDOFF.md](docs/HANDOFF.md).**
+**Future webmaster: start with [FOR-FUTURE-WEBMASTER.md](FOR-FUTURE-WEBMASTER.md), then [docs/HANDOFF.md](docs/HANDOFF.md).**
 
 | Piece | Where it lives | What it does |
 |---|---|---|
@@ -13,6 +13,7 @@ sponsorship, a contact form, and an officer-only admin area.
 
 ## Docs
 
+- [FOR-FUTURE-WEBMASTER.md](FOR-FUTURE-WEBMASTER.md): how the site came to be, how to keep it going, and rules for AI coding agents
 - [docs/HANDOFF.md](docs/HANDOFF.md): accounts, passing the site to the next webmaster, and the yearly checklist
 - [docs/BACKEND.md](docs/BACKEND.md): the API and Railway setup, environment variables, backups and restores
 - [docs/OFFICER-GUIDE.md](docs/OFFICER-GUIDE.md): for officers who write posts and answer sponsor applications

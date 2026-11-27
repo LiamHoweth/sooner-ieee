@@ -18,7 +18,8 @@ and say where the answer came from.
 
 ## 2. Content to supply (hidden until it exists)
 
-- [ ] **2026–27 officer roster**: names, roles, @ou.edu emails, and optional headshots, with each officer's OK to publish. Past years too, if you want a by-year view. Headshots for 8 officers are in the Drive folder "Officer photoshoot" (Sept 2026) but aren't matched to names. The only roster found is the 2025–26 one in the Dec 2025 sponsorship packet.
+- [ ] **Sponsorship levels for 2026–27**: the Sponsors page and the application form use the levels and benefits from the 2025–26 packet (Dec 2025): Crimson $100+, Gold $1,000+, Diamond $2,500+, non-monetary at matching value, giving through the OU Foundation. Confirm they still hold this year, or send the new packet.
+- [ ] **2026–27 officer roster**: names, roles, majors and photoshoot portraits for all 7 officers are on the site (2026-11-27; Liam matched the headshots). Still open: each officer's OK to publish their name and photo, and whether to show personal @ou.edu emails (only the president's is known; the strip shows ieee@ou.edu for everyone).
 - [ ] **Event-type descriptions**: General Body Meetings, professional events, entertainment events, the Annual Dodgeball Tournament, and local hackathons (which ones?). Include what happens and how often.
 - [ ] **Real chapter photos**: 15 chapter photos from the officers' Drive replaced the stock photos (2026-11-26; see `chapterPhotos` in `lib/photos.ts`). Confirm the chapter is OK with everyone pictured, especially the close-ups (antenna build, soldering, mock interview, microwave night).
 - [ ] **Sponsors**: names, tier names and their order, approved logos, links, and the year each applies to.
@@ -33,8 +34,7 @@ and say where the answer came from.
 - [ ] **Alternate colorway names** on the About page: they were matched to the SVGs by eye (Crimson = #5, Blue = #3, Red = #7, Black = #2, Red outlined = #8). Confirm the names and the mapping.
 - [ ] **Coin caption wording** ("Primary mark · OU crimson" / "Secondary mark · IEEE blue"): approved, or should it say something else?
 - [ ] **Discord announcements** for new posts: waiting on server-admin permission, plus a webhook and the channel to post in. Planned only, not built.
-- [ ] **Email on the API** (SMTP): **not set up** (checked 2026-10-30). Invite links must be copied by hand, and new messages trigger no email alerts; they still show in the officer Inbox. Decide whether to add an email provider.
-- [ ] **Railway redeploy**: needed before the inbox, invite links and post expiry work live. Needs your go-ahead. It hasn't been checked whether a push to `main` redeploys the API automatically.
+- [ ] **Email on the API**: the code is ready (2026-11-27). Form alerts go to `ieee@ou.edu` once the Apps Script mail relay is set up under the chapter Gmail and its URL and secret are added to Railway (docs/BACKEND.md → Email). Railway's Hobby plan blocks SMTP, which is why it uses the relay. Until then, invite links must be copied by hand and alerts only show in the officer Inbox.
 - [ ] **Discord and scheduled posts**: if a post is scheduled to go live later, should it announce at that moment? The API has no background job yet, so this is undecided.
 - [ ] **Region 5 website competition 2027**: entering or not? The rules aren't published yet; the old guidelines link returns a 404.
 - [ ] **Domain**: ieeesooners.org is already registered (July 2025, through Cloudflare) and shows a live page titled "IEEE Sooners Student Branch." Who owns it, and can the chapter use it? Alternatives: an ou.edu address through OU IT; ieeesooners.com or ieee-sooners.org (both unregistered when checked on 2026-10-30).
